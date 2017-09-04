@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:padding="10dp"
+    android:background="@android:color/white"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_height="match_parent">
+    <TextView
+        android:id="@+id/agentmap_item_agentkey"
+        android:layout_width="wrap_content"
+        tools:text="shield_agentKater"
+        android:textSize="16sp"
+        android:textColor="#333333"
+        android:layout_height="wrap_content" />
+    <TextView
+        android:id="@+id/agentmap_item_agent_classname"
+        android:layout_marginTop="5dp"
+        android:layout_width="wrap_content"
+        android:textColor="#333333"
+        tools:text="com.dianping.android.agent.shield.AgentKater"
+        android:layout_height="wrap_content" />
+</LinearLayout>

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/search_layout"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="@android:color/white"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/spinner_text"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="left|center_vertical"
+            android:drawablePadding="4dp"
+            android:drawableRight="@drawable/agentmap_title_arrow_down_normal"
+            android:ellipsize="end"
+            android:gravity="center_vertical"
+            android:paddingLeft="10dp"
+            android:text="键值"
+            android:textColor="#ffff6633"
+            android:textSize="16sp"
+            android:maxLines="1" />
+
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="center_vertical"
+            android:layout_marginBottom="7dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginTop="7dp"
+            android:layout_weight="1"
+            android:addStatesFromChildren="true"
+            android:background="@drawable/agentmap_search_bar_bg"
+            android:clickable="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/icon_search"
+                android:layout_width="17dp"
+                android:layout_height="17dp"
+                android:layout_gravity="right|center_vertical"
+                android:layout_marginLeft="11dip"
+                android:clickable="true"
+                android:scaleType="fitXY"
+                android:src="@drawable/agentmap_navibar_icon_search" />
+
+            <EditText
+                android:id="@+id/search_edit"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="left|center_vertical"
+                android:layout_marginLeft="6dip"
+                android:background="@null"
+                android:gravity="center_vertical|left"
+                android:hint="搜索可配置key"
+                android:imeOptions="actionSearch"
+                android:maxLength="100"
+                android:textCursorDrawable="@drawable/agentmap_edittext_cursor_color"
+                android:textColor="@android:color/black"
+                android:textColorHint="#999999"
+                android:textSize="16sp"
+                android:maxLines="1" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/search_text"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="right|center_vertical"
+            android:gravity="center_vertical"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:text="搜索"
+            android:textColor="#ffff6633"
+            android:textSize="16sp" />
+    </LinearLayout>
+    <FrameLayout
+        android:id="@+id/search_content"
+        android:layout_width="match_parent"
+        android:layout_marginTop="1dp"
+        android:layout_height="match_parent" />
+
+</LinearLayout>

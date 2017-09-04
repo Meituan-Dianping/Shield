@@ -1,0 +1,127 @@
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 25
+    buildToolsVersion = '25.0.2'
+    defaultConfig {
+        minSdkVersion 15
+        targetSdkVersion 23
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+        }
+    }
+}
+
+dependencies {
+    compile 'com.android.support:support-v4:25.3.1'
+    compile 'com.android.support:recyclerview-v7:25.3.1'
+    compile 'com.android.support:appcompat-v7:25.3.1'
+    compile 'io.reactivex:rxjava:1.0.14'
+}
+
+// module的build.gradle后面添加如下内容，然后在jenkins上建立job执行 ./gradlew moduleName:uploadArchives 命令即可
+apply plugin: 'maven'
+
+File versionsDir = new File(project.gradle.gradleUserHomeDir, 'versions')
+if (!versionsDir.exists()) {
+    versionsDir.mkdir()
+}
+File gradleProperties = new File(versionsDir, "dzversion.properties")
+if (!gradleProperties.exists()) {
+    gradleProperties.createNewFile()
+}
+def versionReader = new PropertyReader(gradleProperties)
+
+def versionKey = ''
+def versionValue = ''
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+
+            versionKey = "${groupId}_${artifactId}_release_${versionCode}"
+            def versionCount = versionReader."${versionKey}"
+            println '---versionCount:' + versionCount;
+            if (versionCount == null) {
+                versionValue = '0'
+            } else {
+                def count = versionCount.isInteger() ? versionCount.toInteger() : -1
+                versionValue = "${count + 1}"
+            }
+            def version = "${versionCode}.${versionValue}"
+            println "version:" + version
+
+
+            pom.groupId = groupId
+            pom.artifactId = artifactId  // 如detect
+            pom.version = version  // 如1.0.0，可以自定义
+            println '===groupId:' + groupId + " artifactId:" + artifactId + " version:" + version
+
+            def commitId = 'git rev-parse HEAD'.execute([], projectDir).text.trim() + ' of' + pom.version
+
+            pom.project {
+                // 下面只是之前nova项目的配置，可以按需求自定义
+                description commitId // 最后一次git提交的hash
+            }
+
+            String gradle_userHomePath = "${project.gradle.gradleUserHomeDir}${File.separator}gradle.properties"
+            File gradleUserHomeFile = new File(gradle_userHomePath)
+            if(gradleUserHomeFile.exists()){
+                Properties props = new Properties()
+                props.load(new FileInputStream(gradle_userHomePath))
+                repository(url: "http://mvn.dianpingoa.com/android-nova") {
+                    authentication(userName: props.mvnusername, password: props.mvnpassword)
+                }
+            }
+        }
+    }
+}
+
+
+task storeVersion << {
+    println '--versionKey:' + versionKey + ' versionValue:' + versionValue
+
+    versionReader."${versionKey}"(versionValue)
+}
+
+task uploadAar {
+    dependsOn clean, uploadArchives, storeVersion
+}
+
+// 打包时上传源码，可选
+task androidSourcesJar(type: Jar) {
+    classifier = "sources"
+    from android.sourceSets.main.java.sourceFiles
+}
+
+artifacts {
+    archives androidSourcesJar
+}
+
+class PropertyReader {
+
+    File propsFile
+
+    PropertyReader(File propsFile) {
+        this.propsFile = propsFile
+    }
+
+    def propertyMissing(String name) {
+        Properties props = new Properties()
+        propsFile.withInputStream {
+            props.load it
+        }
+        props."$name"
+    }
+
+    def methodMissing(String name, args) {
+        Properties props = new Properties()
+        props.load propsFile.newDataInputStream()
+        props.setProperty name, args.toString() - '[' - ']'
+        props.store propsFile.newWriter(), null
+    }
+}

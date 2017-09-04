@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent"
+    android:background="@android:color/white"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_height="50dp">
+    <TextView
+        android:padding="10dp"
+        android:id="@+id/history_text"
+        android:layout_width="wrap_content"
+        tools:text="shield_agentKater"
+        android:textSize="16sp"
+        android:layout_centerVertical="true"
+        android:textColor="#333333"
+        android:layout_height="wrap_content" />
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1px"
+        android:layout_marginLeft="10dp"
+        android:layout_alignParentBottom="true"
+        android:background="#FFd7d7d7"/>
+</RelativeLayout>

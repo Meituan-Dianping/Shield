@@ -1,0 +1,36 @@
+buildscript {
+    repositories {
+        maven {
+            url "http://mvn.dianpingoa.com/jcenter"
+        }
+        maven {
+            url "http://depot.sankuai.com/nexus/content/groups/public/"
+        }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.1.3'
+    }
+}
+allprojects {
+    repositories {
+        jcenter()
+        mavenCentral()
+        maven {
+            url "http://mvn.dianpingoa.com/android-nova"
+        }
+        maven {
+            url "http://depot.sankuai.com/nexus/content/groups/public/"
+        }
+    }
+    configurations.all {
+        resolutionStrategy {
+            cacheChangingModulesFor 0, 'seconds'
+            cacheDynamicVersionsFor 0, 'seconds'
+        }
+    }
+}
+
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

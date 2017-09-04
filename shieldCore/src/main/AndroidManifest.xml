@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest package="com.dianping.shield.core"
+          xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <activity
+            android:name="com.dianping.shield.debug.PerformanceActivity"
+            android:configChanges="orientation|keyboardHidden"
+            android:label="模块化框架性能监控"
+            android:launchMode="singleTask"
+            android:screenOrientation="nosensor"
+            android:theme="@style/Theme.AppCompat.Light"
+            android:windowSoftInputMode="stateHidden|adjustPan">
+            <intent-filter>
+                <action android:name="com.dianping.action.VIEW"/>
+
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="com.dianping.shield.debug.PagePerformanceActivity"
+            android:configChanges="orientation|keyboardHidden"
+            android:label="模块化框架页面性能监控"
+            android:launchMode="singleTask"
+            android:screenOrientation="nosensor"
+            android:theme="@style/Theme.AppCompat.Light"
+            android:windowSoftInputMode="stateHidden|adjustPan">
+            <intent-filter>
+                <action android:name="com.dianping.action.VIEW"/>
+
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="com.dianping.agentsdk.debugtools.AgentMapListActivity"
+            android:configChanges="orientation|keyboardHidden"
+            android:screenOrientation="nosensor"
+            android:theme="@style/Theme.AppCompat.Light">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="www.meituan.com"
+                    android:path="/shield/agentmap"
+                    android:scheme="imeituan" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
