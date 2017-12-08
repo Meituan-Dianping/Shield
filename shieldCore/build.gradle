@@ -73,7 +73,7 @@ uploadArchives {
             if(gradleUserHomeFile.exists()){
                 Properties props = new Properties()
                 props.load(new FileInputStream(gradle_userHomePath))
-                repository(url: "http://mvn.dianpingoa.com/android-nova") {
+                repository(url: "your_repo_address") {
                     authentication(userName: props.mvnusername, password: props.mvnpassword)
                 }
             }
