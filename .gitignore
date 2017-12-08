@@ -40,3 +40,5 @@ build/
 
 additionalAssets/
 touch-version/
+/*/.sonarlint
+.sonarlint
