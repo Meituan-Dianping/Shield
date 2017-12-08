@@ -1,11 +1,6 @@
 buildscript {
     repositories {
-        maven {
-            url "http://mvn.dianpingoa.com/jcenter"
-        }
-        maven {
-            url "http://depot.sankuai.com/nexus/content/groups/public/"
-        }
+        jcenter()
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:2.3.3'
@@ -14,13 +9,6 @@ buildscript {
 allprojects {
     repositories {
         jcenter()
-        mavenCentral()
-        maven {
-            url "http://mvn.dianpingoa.com/android-nova"
-        }
-        maven {
-            url "http://depot.sankuai.com/nexus/content/groups/public/"
-        }
     }
     configurations.all {
         resolutionStrategy {
