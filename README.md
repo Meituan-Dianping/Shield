@@ -1,7 +1,7 @@
 # Shield
 
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Meituan-Dianping/Shield/pulls)
-[![License](https://img.shields.io/badge/MIT-Apache%202.0-blue.svg)](https://github.com/Meituan-Dianping/Shield/blob/master/LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Meituan-Dianping/Shield/blob/master/LICENSE)
 
 ## 概述
 
