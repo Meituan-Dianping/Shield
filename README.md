@@ -38,6 +38,9 @@
 4. 在getAgentManager方法中指定页面使用何种AgentManager（默认为LightAgentManager，一般无需定制）。
 5. 通过generaterDefaultConfigAgentList方法指定模块配置。
 
+## 博客文章
+[Shield——开源的移动端页面模块化开发框架](https://tech.meituan.com/shield-opensource.html)
+
 ## 技术支持
 - 通过提交issue来寻求帮助
 - 联系我们寻求帮助
