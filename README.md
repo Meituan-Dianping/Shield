@@ -7,6 +7,11 @@
 
 `Shield`是一个模块化UI界面解决方案，它不仅仅是一个Native（Android&iOS）的UI开发框架，而是美团点评到店综合团队基于自身复杂的业务场景沉淀出来的UI开发最佳实践，它不但具备高可复用性，协同开发等特性，还包括后端动态配置，动态模块等一系列解决方案。
 
+## 接入
+在工程的`build.gradle`文件中添加依赖：
+```
+compile 'com.dianping.android.sdk:shieldCore:1.5.1'
+```
 
 ## 设计思想
 
