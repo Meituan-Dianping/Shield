@@ -10,7 +10,7 @@
 ## 接入
 在工程的`build.gradle`文件中添加依赖：
 ```
-compile 'com.dianping.android.sdk:shieldCore:1.5.1'
+compile 'com.dianping.android.sdk:shieldCore:1.6.0'
 ```
 
 ## 设计思想
