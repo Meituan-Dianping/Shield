@@ -30,6 +30,16 @@ public class ExposedInfo {
         return result;
     }
 
+    @Override
+    public String toString() {
+        return "ExposedInfo{" +
+                "owner=" + owner +
+                "owner agent interface=" + owner.getAgentInterface() +
+                "owner cell interface=" + owner.getSectionCellInterface() +
+                ", details=" + details +
+                '}';
+    }
+
     public ExposedInfo() {
         this.details = new ExposedDetails();
     }

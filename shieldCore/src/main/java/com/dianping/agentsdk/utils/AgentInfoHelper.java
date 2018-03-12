@@ -16,7 +16,6 @@ import java.util.Map;
  * Created by hezhi on 16/6/14.
  */
 public class AgentInfoHelper {
-
     private HashMap<String, AgentInfo> DEFAULTAGENTS = new HashMap<String, AgentInfo>();
     private HashMap<String, AgentClassBean> classMap = new HashMap<String, AgentClassBean>();
 
@@ -34,10 +33,8 @@ public class AgentInfoHelper {
 
             for (int j = 0; j < configArray[i].length; j++) {
                 try {
-                    agents.put(configArray[i][j][0],
-                            new AgentInfo((Class<? extends AgentInterface>) Class.forName(configArray[i][j][1]),
-                                    addZeroPrefix(i, getIntStrLength(configArray.length))
-                                            + "." + addZeroPrefix(j, getIntStrLength(configArray[i].length))));
+                    Class agentClass = Class.forName(configArray[i][j][1]);
+                    agents.put(configArray[i][j][0], createAgentInfo(agentClass, i, j, configArray.length, configArray[i].length));
                 } catch (Exception e) {
                     e.printStackTrace();
                     continue;
@@ -46,7 +43,6 @@ public class AgentInfoHelper {
         }
         return agents;
     }
-
 
     /**
      * 组合多个config List
@@ -73,9 +69,8 @@ public class AgentInfoHelper {
                 for (int k = 0; k < configList.get(i)[j].length; k++) {
                     try {
                         combineMap.put(configList.get(i)[j][k][0],
-                                new AgentInfo((Class<? extends AgentInterface>) Class.forName(configList.get(i)[j][k][1]),
-                                        addZeroPrefix(j + groupIndex, getIntStrLength(grouplength))
-                                                + "." + addZeroPrefix(k, getIntStrLength(configList.get(i)[j].length))));
+                                createAgentInfo(Class.forName(configList.get(i)[j][k][1]),
+                                        j + groupIndex, k, grouplength, configList.get(i)[j].length));
                     } catch (Exception e) {
                         e.printStackTrace();
                         continue;
@@ -89,6 +84,21 @@ public class AgentInfoHelper {
         return combineMap;
     }
 
+    public static AgentInfo createAgentInfo(Class agentClass, int groupindex, int index, int groupLength, int length) {
+        if (AgentInterface.class.isAssignableFrom(agentClass)) {
+            AgentInfo agentInfo = new AgentInfo((Class<? extends AgentInterface>) agentClass,
+                    addZeroPrefix(groupindex, getIntStrLength(groupLength))
+                            + "." + addZeroPrefix(index, getIntStrLength(length)));
+            return agentInfo;
+        } else {
+            AgentInfo agentInfo = new AgentInfo(null,
+                    addZeroPrefix(groupindex, getIntStrLength(groupLength))
+                            + "." + addZeroPrefix(index, getIntStrLength(length)));
+            agentInfo.extraClass = agentClass;
+            return agentInfo;
+        }
+    }
+
     public static String addZeroPrefix(int num, int zerolength) {
         int j = getIntStrLength(num);
         String zeroStr = "";
@@ -99,6 +109,7 @@ public class AgentInfoHelper {
     }
 
     public static int getIntStrLength(int num) {
+        if (num == 0) return 1;
         return ((int) Math.log10(num) + 1);
     }
 

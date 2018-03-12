@@ -1,7 +1,5 @@
 package com.dianping.shield.entity;
 
-import android.util.Pair;
-
 import com.dianping.agentsdk.framework.SectionCellInterface;
 
 /**
@@ -60,6 +58,18 @@ public class ExposedAction {
         result = 31 * result + (cellType != null ? cellType.hashCode() : 0);
         result = 31 * result + (isAgentExposed ? 1 : 0);
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "ExposedAction{" +
+                "owner=" + owner +
+                ", section=" + section +
+                ", row=" + row +
+                ", cellType=" + cellType +
+                ", isAddExposed=" + isAddExposed +
+                ", isAgentExposed=" + isAgentExposed +
+                '}';
     }
 
     public ExposedAction(SectionCellInterface owner, int section, int row, CellType cellType, boolean isAddExposed, boolean isAgentExposed) {

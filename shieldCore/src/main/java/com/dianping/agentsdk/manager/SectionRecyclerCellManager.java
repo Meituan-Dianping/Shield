@@ -15,6 +15,7 @@ import com.dianping.agentsdk.adapter.FinalPieceAdapter;
 import com.dianping.agentsdk.adapter.LoadingMorePieceAdapter;
 import com.dianping.agentsdk.adapter.LoadingPieceAdapter;
 import com.dianping.agentsdk.adapter.RowClickAdapter;
+import com.dianping.agentsdk.adapter.RowLongClickAdapter;
 import com.dianping.agentsdk.adapter.SectionDividerPieceAdapter;
 import com.dianping.agentsdk.adapter.SectionLinkPieceAdapter;
 import com.dianping.agentsdk.adapter.SectionPieceAdapter;
@@ -28,11 +29,16 @@ import com.dianping.agentsdk.framework.CellManagerInterface;
 import com.dianping.agentsdk.framework.CellStatusInterface;
 import com.dianping.agentsdk.framework.CellStatusMoreInterface;
 import com.dianping.agentsdk.framework.DividerInterface;
+import com.dianping.agentsdk.framework.DividerOffsetInterface;
 import com.dianping.agentsdk.framework.ItemClickInterface;
 import com.dianping.agentsdk.framework.ItemIdInterface;
+import com.dianping.agentsdk.framework.ItemLongClickInterface;
 import com.dianping.agentsdk.framework.SectionCellInterface;
+import com.dianping.agentsdk.framework.SectionExtraCellDividerOffsetInterface;
 import com.dianping.agentsdk.framework.SectionExtraCellInterface;
+import com.dianping.agentsdk.framework.SectionExtraTopDividerCellInterface;
 import com.dianping.agentsdk.framework.SectionLinkCellInterface;
+import com.dianping.agentsdk.framework.TopDividerInterface;
 import com.dianping.agentsdk.framework.WhiteBoard;
 import com.dianping.agentsdk.sectionrecycler.layoutmanager.LinearLayoutManagerWithSmoothOffset;
 import com.dianping.agentsdk.sectionrecycler.section.MergeSectionDividerAdapter;
@@ -45,6 +51,8 @@ import com.dianping.shield.entity.ExposedDetails;
 import com.dianping.shield.entity.ExposedInfo;
 import com.dianping.shield.entity.ScrollDirection;
 import com.dianping.shield.feature.ExposeScreenLoadedInterface;
+import com.dianping.shield.feature.ExtraCellBottomInterface;
+import com.dianping.shield.feature.ExtraCellTopInterface;
 import com.dianping.shield.feature.HotZoneObserverInterface;
 import com.dianping.shield.feature.LoadingAndLoadingMoreCreator;
 import com.dianping.shield.feature.RecyclerPoolSizeInterface;
@@ -58,7 +66,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -92,6 +99,12 @@ public class SectionRecyclerCellManager implements CellManagerInterface<Recycler
     protected LoadingAndLoadingMoreCreator creator;
     //    protected HotZoneEngine hotZoneEngine = new HotZoneEngine();
     protected Map<HotZoneObserverInterface, RecyclerView.OnScrollListener> scrollListenerMap = new LinkedHashMap<>();
+    protected HashMap<String, HashMap<String, Integer>> reuseIdentifierMap;
+    protected HashMap<String, HashMap<String, Integer>> reuseIdentifierMapForHeader;
+    protected HashMap<String, HashMap<String, Integer>> reuseIdentifierMapForFooter;
+    protected HashMap<String, HashMap<String, Integer>> cellTypeMap;
+    protected HashMap<String, HashMap<String, Integer>> cellTypeMapForHeader;
+    protected HashMap<String, HashMap<String, Integer>> cellTypeMapForFooter;
     ArrayList<HotZoneEngine> hotZoneEngineArrayList = new ArrayList<>();
     private boolean isScrollingByUser = false;
     private boolean isScrollingForHotZone = false;
@@ -143,6 +156,13 @@ public class SectionRecyclerCellManager implements CellManagerInterface<Recycler
 
     public void setWhiteBoard(WhiteBoard whiteBoard) {
         this.whiteBoard = whiteBoard;
+    }
+
+    public void setCanScroll(boolean canScroll) {
+        if (layoutManager instanceof LinearLayoutManagerWithSmoothOffset) {
+            ((LinearLayoutManagerWithSmoothOffset) layoutManager).setScrollEnabled(canScroll);
+        }
+
     }
 
     public void setPageName(String pageName) {
@@ -293,7 +313,7 @@ public class SectionRecyclerCellManager implements CellManagerInterface<Recycler
 
                 c.recyclerViewAdapter = finalPieceAdapter;
                 if (whiteBoard != null) {
-                    if (finalPieceAdapter.getTotalItemCount() > 0) {
+                    if (finalPieceAdapter.getItemCount() > 0) {
                         whiteBoard.putBoolean(ShieldConst.AGENT_VISIBILITY_KEY + c.owner.getHostName(), true);
                     } else {
                         whiteBoard.putBoolean(ShieldConst.AGENT_VISIBILITY_KEY + c.owner.getHostName(), false);
@@ -304,6 +324,7 @@ public class SectionRecyclerCellManager implements CellManagerInterface<Recycler
             }
         }
         mergeRecyclerAdapter.notifyDataSetChanged();
+        exposeSectionItems(ScrollDirection.STATIC);
     }
 
     public ViewGroup getAgentContainerView() {
@@ -537,6 +558,7 @@ public class SectionRecyclerCellManager implements CellManagerInterface<Recycler
             exposedInfo.details.isComplete = false;
             exposedInfo.details.section = sectionInfo.adapterSectionIndex;
             exposedInfo.details.row = sectionInfo.adapterSectionPosition;
+            exposedInfo.details.cellType = exposedInfo.owner.getCellType(exposedInfo.details.section, exposedInfo.details.row);
 
             if (k >= firstCompletePosition && k <= lastCompletePosition) {
                 exposedInfo.details.isComplete = true;
@@ -572,14 +594,15 @@ public class SectionRecyclerCellManager implements CellManagerInterface<Recycler
     public void finishExpose() {
         mCanExposeScreen = false;
         if (mExposeHandler != null) {
-            mExposeHandler.removeCallbacks(null);
-        }
-        if (mExposedEngine != null) {
-            mExposedEngine.stopExposedDispatcher();
+            mExposeHandler.removeCallbacksAndMessages(null);
         }
         if (recyclerView != null) {
             recyclerView.removeOnScrollListener(mOnScrollListener);
         }
+        if (mExposedEngine != null) {
+            mExposedEngine.stopExposedDispatcher();
+        }
+
     }
 
     @Override
@@ -655,8 +678,9 @@ public class SectionRecyclerCellManager implements CellManagerInterface<Recycler
         Cell targetCell = findCellForAgent(agent);
         if (targetCell != null && targetCell.recyclerViewAdapter != null && targetCell.recyclerViewAdapter instanceof PieceAdapter && !((PieceAdapter) targetCell.recyclerViewAdapter).isOnBind()) {
             (targetCell.recyclerViewAdapter).notifyDataSetChanged();
+            exposeSectionItems(ScrollDirection.STATIC);
             if (whiteBoard != null) {
-                int cellCount = ((PieceAdapter) (targetCell.recyclerViewAdapter)).getTotalItemCount();
+                int cellCount = ((PieceAdapter) (targetCell.recyclerViewAdapter)).getItemCount();
                 if (cellCount > 0) {
                     whiteBoard.putBoolean(ShieldConst.AGENT_VISIBILITY_KEY + agent.getHostName(), true);
                 } else {
@@ -705,12 +729,8 @@ public class SectionRecyclerCellManager implements CellManagerInterface<Recycler
         //删除需要删除的
         if (deleteList != null && !deleteList.isEmpty()) {
             for (AgentInterface deleteCell : deleteList) {
-                Iterator<Map.Entry<String, Cell>> itr = cells.entrySet().iterator();
-                while (itr.hasNext()) {
-                    Cell c = itr.next().getValue();
-                    if (c.owner == deleteCell) {
-                        itr.remove();
-                    }
+                if (cells.containsKey(getCellName(deleteCell))) {
+                    cells.remove(getCellName(deleteCell));
                 }
             }
         }
@@ -733,12 +753,8 @@ public class SectionRecyclerCellManager implements CellManagerInterface<Recycler
     }
 
     public void removeAllCells(AgentInterface agent) {
-        Iterator<Map.Entry<String, Cell>> itr = cells.entrySet().iterator();
-        while (itr.hasNext()) {
-            Cell c = itr.next().getValue();
-            if (c.owner == agent) {
-                itr.remove();
-            }
+        if (cells.containsKey(getCellName(agent))) {
+            cells.remove(getCellName(agent));
         }
         notifyCellChanged();
     }
@@ -791,11 +807,25 @@ public class SectionRecyclerCellManager implements CellManagerInterface<Recycler
         }
 
         if (sCellInterface instanceof DividerInterface) {
-            adapter = new SectionDividerPieceAdapter(mContext, adapter, (DividerInterface) sCellInterface);
+            SectionDividerPieceAdapter sectionDividerPieceAdapter = new SectionDividerPieceAdapter(mContext, adapter, (DividerInterface) sCellInterface);
+            if (sCellInterface instanceof DividerOffsetInterface) {
+                sectionDividerPieceAdapter.setDividerOffsetInterface((DividerOffsetInterface) sCellInterface);
+            }
+            if (sCellInterface instanceof TopDividerInterface) {
+                sectionDividerPieceAdapter.setTopDividerInterface((TopDividerInterface) sCellInterface);
+            }
+            adapter = sectionDividerPieceAdapter;
         }
 
         if (sCellInterface instanceof SectionExtraCellInterface) {
-            adapter = new ExtraCellPieceAdapter(mContext, adapter, (SectionExtraCellInterface) sCellInterface);
+            ExtraCellPieceAdapter extraCellPieceAdapter = new ExtraCellPieceAdapter(mContext, adapter, (SectionExtraCellInterface) sCellInterface);
+            if (sCellInterface instanceof SectionExtraCellDividerOffsetInterface) {
+                extraCellPieceAdapter.setExtraCellDividerOffsetInterface((SectionExtraCellDividerOffsetInterface) sCellInterface);
+            }
+            if (sCellInterface instanceof SectionExtraTopDividerCellInterface) {
+                extraCellPieceAdapter.setExtraTopDividerCellInterface((SectionExtraTopDividerCellInterface) sCellInterface);
+            }
+            adapter = extraCellPieceAdapter;
         }
 
         if (sCellInterface instanceof CellStatusMoreInterface) {
@@ -816,12 +846,25 @@ public class SectionRecyclerCellManager implements CellManagerInterface<Recycler
             adapter = new RowClickAdapter(mContext, adapter, (ItemClickInterface) sCellInterface);
         }
 
+        if (sCellInterface instanceof ItemLongClickInterface) {
+            adapter = new RowLongClickAdapter(mContext, adapter, (ItemLongClickInterface) sCellInterface);
+        }
+
         if (sCellInterface instanceof SetTopInterface) {
-            adapter = new SetTopAdapter(mContext, adapter, (SetTopInterface) sCellInterface);
+            SetTopAdapter setTopAdapter = new SetTopAdapter(mContext, adapter, (SetTopInterface) sCellInterface);
+            if (sCellInterface instanceof ExtraCellTopInterface) {
+                setTopAdapter.setExtraCellTopInterface((ExtraCellTopInterface) sCellInterface);
+            }
+            adapter = setTopAdapter;
         }
 
         if (sCellInterface instanceof SetBottomInterface) {
-            adapter = new SetBottomAdapter(mContext, adapter, (SetBottomInterface) sCellInterface);
+            SetBottomAdapter setBottomAdapter = new SetBottomAdapter(mContext, adapter, (SetBottomInterface) sCellInterface);
+            setBottomAdapter.setParentView(recyclerView);
+            if (sCellInterface instanceof ExtraCellBottomInterface) {
+                setBottomAdapter.setExtraCellBottomInterface((ExtraCellBottomInterface) sCellInterface);
+            }
+            adapter = setBottomAdapter;
         }
 
         if (sCellInterface instanceof SetZoomInterface) {
@@ -882,6 +925,56 @@ public class SectionRecyclerCellManager implements CellManagerInterface<Recycler
         }
 
         return cellGroupIndex;
+    }
+
+    public HashMap<String, Integer> getReuseIdentifierMap(String hostName) {
+        return getReuseIdentifierMap(reuseIdentifierMap, hostName);
+    }
+
+    public HashMap<String, Integer> getReuseIdentifierMapForHeader(String hostName) {
+        return getReuseIdentifierMap(reuseIdentifierMapForHeader, hostName);
+    }
+
+    public HashMap<String, Integer> getReuseIdentifierMapForFooter(String hostName) {
+        return getReuseIdentifierMap(reuseIdentifierMapForFooter, hostName);
+    }
+
+    public HashMap<String, Integer> getCellTypeMap(String hostName) {
+        return getReuseIdentifierMap(cellTypeMap, hostName);
+    }
+
+    public HashMap<String, Integer> getCellTypeMapForHeader(String hostName) {
+        return getReuseIdentifierMap(cellTypeMapForHeader, hostName);
+    }
+
+    public HashMap<String, Integer> getCellTypeMapForFooter(String hostName) {
+        return getReuseIdentifierMap(cellTypeMapForFooter, hostName);
+    }
+
+    protected HashMap<String, Integer> getReuseIdentifierMap(HashMap<String, HashMap<String, Integer>> mapCollection, String hostName) {
+        if (TextUtils.isEmpty(hostName)) {
+            return null;
+        }
+
+        if (mapCollection == null) {
+            mapCollection = new HashMap<>();
+        }
+
+        HashMap<String, Integer> agentIdentifierMap = mapCollection.get(hostName);
+        if (agentIdentifierMap == null) {
+            agentIdentifierMap = new HashMap<>();
+            mapCollection.put(hostName, agentIdentifierMap);
+        }
+
+        return agentIdentifierMap;
+    }
+
+    public MergeSectionDividerAdapter.PositionType getPositionType(AgentInterface agentInterface, int section, int row) {
+        Cell cell = findCellForAgent(agentInterface);
+        if (cell != null && cell.recyclerViewAdapter instanceof PieceAdapter) {
+            return mergeRecyclerAdapter.findPositionType((PieceAdapter) cell.recyclerViewAdapter, section, row);
+        }
+        return MergeSectionDividerAdapter.PositionType.UNKNOWN;
     }
 
     public static class AgentSectionRow {

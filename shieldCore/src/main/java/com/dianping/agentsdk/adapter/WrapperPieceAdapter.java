@@ -1,6 +1,7 @@
 package com.dianping.agentsdk.adapter;
 
 import android.content.Context;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
 import android.util.Pair;
@@ -38,6 +39,9 @@ public class WrapperPieceAdapter<EI> extends PieceAdapter {
         return adapter.onCreateViewHolder(parent, viewType);
     }
 
+    public PieceAdapter getInnerAdapter() {
+        return this.adapter;
+    }
 
     @Override
     public int getSectionCount() {
@@ -70,12 +74,12 @@ public class WrapperPieceAdapter<EI> extends PieceAdapter {
     }
 
     @Override
-    public int topDividerOffset(int section, int row) {
+    public Rect topDividerOffset(int section, int row) {
         return adapter.topDividerOffset(section, row);
     }
 
     @Override
-    public int bottomDividerOffset(int section, int row) {
+    public Rect bottomDividerOffset(int section, int row) {
         return adapter.bottomDividerOffset(section, row);
     }
 
@@ -164,6 +168,11 @@ public class WrapperPieceAdapter<EI> extends PieceAdapter {
         return adapter.hasTopDividerVerticalOffset(section, row);
     }
 
+    @Override
+    public CellType getCellType(int viewType) {
+        return adapter.getCellType(viewType);
+    }
+
     public CellType getCellType(int wrappedSection, int wrappedRow) {
         return adapter.getCellType(wrappedSection, wrappedRow);
     }
@@ -175,5 +184,41 @@ public class WrapperPieceAdapter<EI> extends PieceAdapter {
     @Override
     public boolean isInnerSection(int wrappedSection) {
         return adapter.isInnerSection(wrappedSection);
+    }
+
+    @Override
+    public void onAdapterChanged() {
+        super.onAdapterChanged();
+        getInnerAdapter().onAdapterChanged();
+    }
+
+    @Override
+    public void onAdapterItemRangeChanged(int positionStart, int itemCount) {
+        super.onAdapterItemRangeChanged(positionStart, itemCount);
+        getInnerAdapter().onAdapterItemRangeChanged(positionStart, itemCount);
+    }
+
+    @Override
+    public void onAdapterItemRangeChanged(int positionStart, int itemCount, Object payload) {
+        super.onAdapterItemRangeChanged(positionStart, itemCount, payload);
+        getInnerAdapter().onAdapterItemRangeChanged(positionStart, itemCount, payload);
+    }
+
+    @Override
+    public void onAdapterItemRangeInserted(int positionStart, int itemCount) {
+        super.onAdapterItemRangeInserted(positionStart, itemCount);
+        getInnerAdapter().onAdapterItemRangeInserted(positionStart, itemCount);
+    }
+
+    @Override
+    public void onAdapterItemRangeRemoved(int positionStart, int itemCount) {
+        super.onAdapterItemRangeRemoved(positionStart, itemCount);
+        getInnerAdapter().onAdapterItemRangeRemoved(positionStart, itemCount);
+    }
+
+    @Override
+    public void onAdapterItemRangeMoved(int fromPosition, int toPosition, int itemCount) {
+        super.onAdapterItemRangeMoved(fromPosition, toPosition, itemCount);
+        getInnerAdapter().onAdapterItemRangeMoved(fromPosition, toPosition, itemCount);
     }
 }

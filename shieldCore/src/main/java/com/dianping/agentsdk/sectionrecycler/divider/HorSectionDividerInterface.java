@@ -1,6 +1,7 @@
 package com.dianping.agentsdk.sectionrecycler.divider;
 
 
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 
 /**
@@ -59,13 +60,13 @@ public interface HorSectionDividerInterface {
      * @param section the section index to query
      * @param position the in-section position index to query
      */
-    int topDividerOffset(int section, int position);
+    Rect topDividerOffset(int section, int position);
 
     /**
      * Returns the LEFT offset of the bottom divider for the given position
      * @param section the section index to query
      * @param position the in-section position index to query
      */
-    int bottomDividerOffset(int section, int position);
+    Rect bottomDividerOffset(int section, int position);
 
 }

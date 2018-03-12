@@ -1,6 +1,7 @@
 package com.dianping.agentsdk.adapter;
 
 import android.content.Context;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
 import android.util.Pair;
@@ -90,7 +91,7 @@ public class LoadingPieceAdapter extends WrapperPieceAdapter<CellStatusInterface
     @Override
     public int getInnerType(int wrappedType) {
         if (wrappedType < TYPE_OFFSET) {
-            return TYPE_NOT_EXIST;
+            return wrappedType;
         }
         return super.getInnerType(wrappedType - TYPE_OFFSET);
     }
@@ -118,6 +119,13 @@ public class LoadingPieceAdapter extends WrapperPieceAdapter<CellStatusInterface
         }
     }
 
+    @Override
+    public CellType getCellType(int viewType) {
+        if (viewType == LOADING_TYPE || viewType == FAILED_TYPE || viewType == EMPTY_TYPE) {
+            return CellType.LOADING;
+        }
+        return super.getCellType(viewType - TYPE_OFFSET);
+    }
 
     @Override
     public Pair<Integer, Integer> getInnerPosition(int wrappedSection, int wrappedRow) {
@@ -164,17 +172,17 @@ public class LoadingPieceAdapter extends WrapperPieceAdapter<CellStatusInterface
 
 
     @Override
-    public int topDividerOffset(int section, int row) {
+    public Rect topDividerOffset(int section, int row) {
         if (needShow()) {
-            return NO_OFFSET;
+            return null;
         }
         return super.topDividerOffset(section, row);
     }
 
     @Override
-    public int bottomDividerOffset(int section, int row) {
+    public Rect bottomDividerOffset(int section, int row) {
         if (needShow()) {
-            return NO_OFFSET;
+            return null;
         }
         return super.bottomDividerOffset(section, row);
     }

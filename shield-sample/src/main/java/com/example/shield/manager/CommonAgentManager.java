@@ -22,7 +22,6 @@ public class CommonAgentManager extends LightAgentManager {
         this.featureBridge = featureBridgeInterface;
     }
 
-    @Override
     protected AgentInterface constructAgents(Class<? extends AgentInterface> agentClass) {
         AgentInterface cellAgent = null;
         try {

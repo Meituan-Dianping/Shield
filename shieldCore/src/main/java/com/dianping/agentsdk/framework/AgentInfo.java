@@ -4,13 +4,16 @@ import java.io.Serializable;
 
 public class AgentInfo implements Serializable {
     public Class<? extends AgentInterface> agentClass;
+    public String agentPath;
     public String index;
+    public String extraInfo;
+    public Class extraClass;
 
     /**
      * 带排序的Agent
      *
      * @param agentClass
-     * @param index      可以写类似"0200Basic.10Address" 不允许传null
+     * @param index
      */
     public AgentInfo(Class<? extends AgentInterface> agentClass, String index) {
         if (index == null) {
@@ -23,6 +26,12 @@ public class AgentInfo implements Serializable {
 
     @Override
     public String toString() {
-        return agentClass.getSimpleName() + " " + index;
+        if (agentClass != null) {
+            return agentClass.getSimpleName() + " " + index;
+        } else if (extraClass != null) {
+            return extraClass.getSimpleName() + " " + index;
+        } else {
+            return agentPath + " " + index;
+        }
     }
 }

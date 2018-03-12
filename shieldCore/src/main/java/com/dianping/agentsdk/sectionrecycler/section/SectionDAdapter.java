@@ -1,6 +1,7 @@
 package com.dianping.agentsdk.sectionrecycler.section;
 
 import android.content.Context;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
@@ -42,7 +43,6 @@ import com.dianping.shield.core.R;
 public abstract class SectionDAdapter<VH extends RecyclerView.ViewHolder>
         extends SectionAdapter<VH> implements HorDividerCreator, HorSectionDividerInterface {
 
-    protected static final int NO_OFFSET = -1;
     protected static final int NO_SPACE_HIGHT = -1;
     public static int INDEX_NOT_EXIST = -1;
     public static int TYPE_NOT_EXIST = -1;
@@ -305,50 +305,54 @@ public abstract class SectionDAdapter<VH extends RecyclerView.ViewHolder>
     }
 
     @Override
-    public final int topDividerOffset(int position) {
+    public final Rect topDividerOffset(int position) {
         Pair<Integer, Integer> sectionInfo = getSectionIndex(position);
 
         if (sectionInfo == null) {
-            return 0;
+            return new Rect();
         }
 
-        float topOffset = topDividerOffset(sectionInfo.first, sectionInfo.second);
-        if (topOffset >= 0) {
-            return (int) topOffset;
+        Rect topOffset = topDividerOffset(sectionInfo.first, sectionInfo.second);
+        if (topOffset != null) {
+            return topOffset;
         }
 
         SectionPosition p = getSectionPosition(sectionInfo.first, sectionInfo.second);
 
+        Rect offset = new Rect();
         if (p == SectionPosition.TOP || p == SectionPosition.BOTTOM || p == SectionPosition.SINGLE) {
-            return 0;
+            offset.left = 0;
         } else if (p == SectionPosition.MIDDLE) {
-            return (int) defaultOffset;
-        } else {
-            return 0;
+            offset.left = (int) defaultOffset;
         }
+
+        return offset;
     }
 
     @Override
-    public final int bottomDividerOffset(int position) {
+    public final Rect bottomDividerOffset(int position) {
 
         Pair<Integer, Integer> sectionInfo = getSectionIndex(position);
 
         if (sectionInfo == null) {
-            return 0;
+            return new Rect();
         }
 
-        float bottomOffset = bottomDividerOffset(sectionInfo.first, sectionInfo.second);
-        if (bottomOffset >= 0) {
-            return (int) bottomOffset;
+        Rect bottomOffset = bottomDividerOffset(sectionInfo.first, sectionInfo.second);
+        if (bottomOffset != null) {
+            return bottomOffset;
         }
 
         SectionPosition p = getSectionPosition(sectionInfo.first, sectionInfo.second);
 
+        Rect offset = new Rect();
         if (p == SectionPosition.BOTTOM || p == SectionPosition.SINGLE) {
-            return 0;
+            offset.left = 0;
         } else {
-            return (int) defaultOffset;
+            offset.left = (int) defaultOffset;
         }
+
+        return offset;
     }
 
     public void setDefaultSectionDivider(Drawable defaultSectionDivider) {

@@ -2,6 +2,7 @@ package com.dianping.agentsdk.sectionrecycler.section;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
@@ -10,12 +11,12 @@ import android.util.Pair;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.dianping.shield.debug.PerformanceManager;
 import com.dianping.agentsdk.framework.AgentInterface;
 import com.dianping.agentsdk.framework.LinkType;
 import com.dianping.agentsdk.framework.SectionCellInterface;
 import com.dianping.agentsdk.sectionrecycler.GroupBorderDecoration;
 import com.dianping.shield.adapter.MergeAdapterTypeRefreshListener;
+import com.dianping.shield.debug.PerformanceManager;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -356,6 +357,44 @@ public class MergeSectionDividerAdapter
         return sectionInfo.positionInfos.get(displayPosition);
     }
 
+    public enum PositionType {
+        UNKNOWN, FIRST, MIDDLE, LAST, SINGLE
+    }
+
+    public PositionType findPositionType(PieceAdapter adapter, int sectionPosition, int rowPosition) {
+        int adapterIndex = getIndex(pieces, adapter);
+
+        if (adapterIndex >= 0 && sectionInfos != null && !sectionInfos.isEmpty()) {
+            for (int i = 0; i < sectionInfos.size(); i++) {
+                DetailSectionInfo sectionInfo = sectionInfos.get(i);
+                if (sectionInfo != null && sectionInfo.positionInfos != null && !sectionInfo.positionInfos.isEmpty()) {
+                    ArrayList<DetailSectionPositionInfo> positionInfos = sectionInfo.positionInfos;
+                    for (int j = 0; j < positionInfos.size(); j++) {
+                        DetailSectionPositionInfo positionInfo = positionInfos.get(j);
+                        if (positionInfo != null) {
+                            if (positionInfo.adapterIndex == adapterIndex
+                                    && positionInfo.adapterSectionIndex == sectionPosition
+                                    && positionInfo.adapterSectionPosition == rowPosition) {
+
+                                if (j == 0 && j == positionInfos.size() - 1) {
+                                    return PositionType.SINGLE;
+                                } else if (j == 0) {
+                                    return PositionType.FIRST;
+                                } else if (j == positionInfos.size() - 1) {
+                                    return PositionType.LAST;
+                                } else {
+                                    return PositionType.MIDDLE;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return PositionType.UNKNOWN;
+    }
+
     public int getGlobalPosition(PieceAdapter adapter, int sectionPosition, int rowPosition) {
 
         int globalPosition = 0;
@@ -531,7 +570,7 @@ public class MergeSectionDividerAdapter
     }
 
     @Override
-    public int topDividerOffset(int section, int position) {
+    public Rect topDividerOffset(int section, int position) {
         DetailSectionPositionInfo info = getDetailSectionPositionInfo(section, position);
         if (info != null) {
             PieceAdapter adapter = pieces.get(info.adapterIndex);
@@ -541,11 +580,11 @@ public class MergeSectionDividerAdapter
             }
         }
 
-        return 0;
+        return null;
     }
 
     @Override
-    public int bottomDividerOffset(int section, int position) {
+    public Rect bottomDividerOffset(int section, int position) {
         DetailSectionPositionInfo info = getDetailSectionPositionInfo(section, position);
         if (info != null) {
             PieceAdapter adapter = pieces.get(info.adapterIndex);
@@ -554,7 +593,7 @@ public class MergeSectionDividerAdapter
             }
         }
 
-        return 0;
+        return null;
     }
 
     @Override

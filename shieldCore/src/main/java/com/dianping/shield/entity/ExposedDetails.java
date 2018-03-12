@@ -7,6 +7,7 @@ package com.dianping.shield.entity;
 public class ExposedDetails {
     public int section;
     public int row;
+    public CellType cellType;
     public boolean isComplete;
 
     @Override
@@ -18,15 +19,26 @@ public class ExposedDetails {
 
         if (section != that.section) return false;
         if (row != that.row) return false;
-        return isComplete == that.isComplete;
-
+        if (isComplete != that.isComplete) return false;
+        return cellType == that.cellType;
     }
 
     @Override
     public int hashCode() {
         int result = section;
         result = 31 * result + row;
+        result = 31 * result + (cellType != null ? cellType.hashCode() : 0);
         result = 31 * result + (isComplete ? 1 : 0);
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "ExposedDetails{" +
+                "section=" + section +
+                ", row=" + row +
+                ", cellType=" + cellType +
+                ", isComplete=" + isComplete +
+                '}';
     }
 }

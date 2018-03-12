@@ -2,6 +2,11 @@ package com.dianping.agentsdk.framework;
 
 import java.util.Map;
 
+/**
+ * use ShieldConfig instead;
+ *
+ */
+@Deprecated
 public interface AgentListConfig {
 
     /**
@@ -17,6 +22,7 @@ public interface AgentListConfig {
      *
      * @return
      */
+    @Deprecated
     Map<String, AgentInfo> getAgentInfoList();
 
     /**
@@ -24,5 +30,6 @@ public interface AgentListConfig {
      *
      * @return
      */
+    @Deprecated
     Map<String, Class<? extends AgentInterface>> getAgentList();
 }

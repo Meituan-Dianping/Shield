@@ -1,5 +1,6 @@
 package com.dianping.agentsdk.sectionrecycler.divider;
 
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 
 /**
@@ -71,12 +72,14 @@ public interface HorDividerCreator {
      * @param position Item 的位置
      * @return float 左侧缩近距离
      */
-    int topDividerOffset(int position);
+    Rect topDividerOffset(int position);
 
     /**
      * 返回 Item 底部分隔线的 <strong>左侧</strong> 缩进距离
      * @param position Item 的位置
      * @return float 左侧缩近距离
      */
-    int bottomDividerOffset(int position);
+    Rect bottomDividerOffset(int position);
+
+
 }

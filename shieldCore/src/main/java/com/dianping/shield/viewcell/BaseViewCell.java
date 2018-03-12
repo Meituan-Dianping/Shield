@@ -11,6 +11,7 @@ import com.dianping.agentsdk.framework.CellStatusMoreInterface;
 import com.dianping.agentsdk.framework.DividerInterface;
 import com.dianping.agentsdk.framework.ItemClickInterface;
 import com.dianping.agentsdk.framework.ItemIdInterface;
+import com.dianping.agentsdk.framework.ItemLongClickInterface;
 import com.dianping.agentsdk.framework.LinkType;
 import com.dianping.agentsdk.framework.SectionExtraCellInterface;
 import com.dianping.agentsdk.framework.SectionLinkCellInterface;
@@ -21,10 +22,10 @@ import com.dianping.agentsdk.framework.SectionLinkCellInterface;
 public abstract class BaseViewCell implements SectionExtraCellInterface,
         DividerInterface, CellStatusInterface,
         CellStatusMoreInterface, SectionLinkCellInterface,
-        ItemIdInterface, ItemClickInterface {
+        ItemIdInterface, ItemClickInterface, ItemLongClickInterface {
     public Context mContext;
     protected OnItemClickListener mOnItemClickListener;
-
+    protected OnItemLongClickListener mOnItemLongClickListener;
     public BaseViewCell(Context context) {
         this.mContext = context;
     }
@@ -211,5 +212,15 @@ public abstract class BaseViewCell implements SectionExtraCellInterface,
     @Override
     public void setOnItemClickListener(OnItemClickListener listener) {
         mOnItemClickListener = listener;
+    }
+
+    @Override
+    public void setOnItemLongClickListener(OnItemLongClickListener listener) {
+        mOnItemLongClickListener = listener;
+    }
+
+    @Override
+    public OnItemLongClickListener getOnItemLongClickListener() {
+        return mOnItemLongClickListener;
     }
 }

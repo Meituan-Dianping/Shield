@@ -64,7 +64,7 @@ public class LightAgentManager implements AgentManagerInterface {
 
     private void setupAgents(ArrayList<AgentListConfig> defaultConfig) {
         agentList.clear();
-        agents.clear();
+//        agents.clear();
 
         setDefaultAgent(defaultConfig);
     }
@@ -77,12 +77,12 @@ public class LightAgentManager implements AgentManagerInterface {
     protected void setDefaultAgent(ArrayList<AgentListConfig> defaultConfig, String keyPath, String index) {
         Map<String, AgentInfo> defaultAgent = getDefaultAgentList(defaultConfig);
         if (defaultAgent == null) {
-//            throw new RuntimeException("generaterDefaultAgent() can not return null");
-            Log.e("Shield", "generaterDefaultAgent() can not return null");
+            Log.e("Shield", "Failed to find a useful config ");
             return;
         }
-        try {
-            for (Map.Entry<String, AgentInfo> entry : defaultAgent.entrySet()) {
+
+        for (Map.Entry<String, AgentInfo> entry : defaultAgent.entrySet()) {
+            try {
                 String key;
                 if (!"".equals(keyPath)) {
                     key = keyPath + AGENT_SEPARATE + entry.getKey();
@@ -91,27 +91,38 @@ public class LightAgentManager implements AgentManagerInterface {
                 }
                 if (!agents.containsKey(key)) {
                     agentList.add(key);
-                    AgentInterface cellAgent = constructAgents(entry.getValue().agentClass);
+                    AgentInterface cellAgent = constructAgents(entry.getValue());
+                    updateIndexInfo(cellAgent, keyPath, index, key, entry);
 
-                    if (cellAgent != null) {
-                        String childIndex;
-                        if (!"".equals(keyPath)) {
-                            childIndex = index + "." + entry.getValue().index;
-                        } else {
-                            childIndex = entry.getValue().index;
-                        }
+                } else {
+                    agentList.add(key);
+                    AgentInterface cellAgent = agents.get(key);
+                    updateIndexInfo(cellAgent, keyPath, index, key, entry);
 
-                        cellAgent.setIndex(childIndex);
-                        cellAgent.setHostName(key);
-                        agents.put(key, cellAgent);
-                        if (cellAgent instanceof ShieldContainerInterface) {
-                            setDefaultAgent(((ShieldContainerInterface) cellAgent).generaterConfigs(), key, childIndex);
-                        }
-                    }
                 }
+            } catch (Exception e) {
+                Log.e("Shield", e.toString());
+                continue;
             }
-        } catch (Exception e) {
-//            Log.e(TAG, e.toString());
+        }
+
+    }
+
+    private void updateIndexInfo(AgentInterface cellAgent, String keyPath, String index, String key, Map.Entry<String, AgentInfo> entry) {
+        if (cellAgent != null) {
+            String childIndex;
+            if (!"".equals(keyPath)) {
+                childIndex = index + "." + entry.getValue().index;
+            } else {
+                childIndex = entry.getValue().index;
+            }
+
+            cellAgent.setIndex(childIndex);
+            cellAgent.setHostName(key);
+            agents.put(key, cellAgent);
+            if (cellAgent instanceof ShieldContainerInterface && ((ShieldContainerInterface) cellAgent).generaterConfigs() != null) {
+                setDefaultAgent(((ShieldContainerInterface) cellAgent).generaterConfigs(), key, childIndex);
+            }
         }
     }
 
@@ -119,8 +130,6 @@ public class LightAgentManager implements AgentManagerInterface {
     protected Map<String, AgentInfo> getDefaultAgentList(ArrayList<AgentListConfig> defaultConfig) {
 
         if (defaultConfig == null) {
-            Log.e("Shield", "generaterDefaultConfigAgentList return null");
-            // throw new RuntimeException("generaterDefaultConfigAgentList return null");
             return null;
         }
 
@@ -141,7 +150,7 @@ public class LightAgentManager implements AgentManagerInterface {
 //                if (Environment.isDebug()) {
 //                    throw new RuntimeException("there has a exception " + e);
 //                }
-                e.printStackTrace();
+                Log.e("Shield", e.toString());
                 return null;
             }
         }
@@ -152,13 +161,18 @@ public class LightAgentManager implements AgentManagerInterface {
     }
 
     //反射构造Agent
-    protected AgentInterface constructAgents(Class<? extends AgentInterface> agentClass) {
+    protected AgentInterface constructAgents(AgentInfo agentInfo) {
+        if (agentInfo == null) {
+            Log.e("Shield", "Failed to construct a null agent");
+            return null;
+        }
+        Class<? extends AgentInterface> agentClass = agentInfo.agentClass;
         AgentInterface cellAgent = null;
         try {
             cellAgent = agentClass.getConstructor(Object.class).newInstance(
                     fragment);
         } catch (Exception e) {
-//                        e.printStackTrace();
+//              e.printStackTrace();
         }
         if (cellAgent == null) {
             try {
@@ -319,6 +333,7 @@ public class LightAgentManager implements AgentManagerInterface {
                 }
                 agent.onStop();
                 agent.onDestroy();
+                agents.remove(name);
                 //删除不再存在的Agent对应的Cell
                 deleteList.add(agent);
             }
@@ -329,6 +344,7 @@ public class LightAgentManager implements AgentManagerInterface {
 
         agentCellBridgeInterface.updateCells(addList, updateList, deleteList);
 
+        // only for old version
         dispatchCellChanged(fragment.getActivity(), null, null);
     }
 
@@ -337,6 +353,7 @@ public class LightAgentManager implements AgentManagerInterface {
         return agents.get(name);
     }
 
+    //onAgentChanged callback is Deprecated,so don't call dispatchCellChanged.
     @Deprecated
     public void dispatchCellChanged(FragmentActivity activity, AgentInterface caller, Bundle data) {
         if (activity == null) {
@@ -348,15 +365,10 @@ public class LightAgentManager implements AgentManagerInterface {
             if (caller != null && caller != ca)
                 continue;
 
-            // normally, the agents will inflate some layout in onCellChanged()
-            // method, but the class loader is not matched. so we need to
-            // prepare the class loader here.
             if (ca != null) {
-//                ((NovaActivity) activity).setClassLoader(ca.getClass().getClassLoader());
                 try {
                     ca.onAgentChanged(data);
                 } finally {
-//                    ((NovaActivity) activity).setClassLoader(null);
                 }
             }
         }

@@ -20,6 +20,7 @@ import com.dianping.shield.sectionrecycler.WrapContentLinearLayoutManager;
 public class LinearLayoutManagerWithSmoothOffset extends WrapContentLinearLayoutManager {
 
     protected Context context;
+    private boolean isScrollEnabled = true;
 
     public LinearLayoutManagerWithSmoothOffset(Context context) {
         super(context, VERTICAL, false);
@@ -32,6 +33,16 @@ public class LinearLayoutManagerWithSmoothOffset extends WrapContentLinearLayout
 
     public Context getContext() {
         return context;
+    }
+
+    public void setScrollEnabled(boolean flag) {
+        this.isScrollEnabled = flag;
+    }
+
+    @Override
+    public boolean canScrollVertically() {
+        //Similarly you can customize "canScrollHorizontally()" for managing horizontal scroll
+        return isScrollEnabled && super.canScrollVertically();
     }
 
     public void smoothScrollToPosition(int position, int offset) {

@@ -6,19 +6,19 @@ import android.graphics.drawable.Drawable;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 
-    /**
-     * <p>
-     *      为 {@link RecyclerView}绘制分隔线的 {@link RecyclerView.ItemDecoration}
-     *      这个类只绘制每个 Item 上方和下方的两条分隔线。
-     * </p>
-     * <p>
-     *      需要接口 {@link HorDividerCreator} 的实例提供具体的绘制分隔线所需要的信息
-     * </p>
-     * <p>
-     * Created by runqi.wei
-     * 14:06
-     * 20.06.2016.
-     */
+/**
+ * <p>
+ * 为 {@link RecyclerView}绘制分隔线的 {@link RecyclerView.ItemDecoration}
+ * 这个类只绘制每个 Item 上方和下方的两条分隔线。
+ * </p>
+ * <p>
+ * 需要接口 {@link HorDividerCreator} 的实例提供具体的绘制分隔线所需要的信息
+ * </p>
+ * <p>
+ * Created by runqi.wei
+ * 14:06
+ * 20.06.2016.
+ */
 public class HorDividerDecoration extends RecyclerView.ItemDecoration {
 
     protected HorDividerCreator dividerCreator;
@@ -65,7 +65,7 @@ public class HorDividerDecoration extends RecyclerView.ItemDecoration {
         float footerHeight = dividerCreator.getFooterHeight(childPosition);
         if (footerHeight > 0) {
             float bottomHeight = footerHeight;
-            int lastPosition  = parent.getAdapter().getItemCount() - 1;
+            int lastPosition = parent.getAdapter().getItemCount() - 1;
             if ("HeaderViewRecyclerAdapter".equals(adapter.getClass().getSimpleName())) {
                 lastPosition--;
             }
@@ -117,7 +117,7 @@ public class HorDividerDecoration extends RecyclerView.ItemDecoration {
             // draw top divider
             Drawable topDivider = dividerCreator.getTopDivider(childPosition);
             if (topDivider != null) {
-                int topleft = left + dividerCreator.topDividerOffset(childPosition);
+                int topleft = left;
                 int topTop = 0;
                 int topRight = right;
                 int topBottom = 0;
@@ -131,7 +131,7 @@ public class HorDividerDecoration extends RecyclerView.ItemDecoration {
                 // |---------------------|- Margin Bottom
                 //
                 // 否则将分隔线画在 Item 的 Margin 内，分隔线的顶部紧贴 Item 的上 Margin,
-                // 根据 Divider 的高度不同，可能会遮住 Item 的下部
+                // 根据 Divider 的高度不同，可能会遮住 Item 的上部
                 // |---------------------|- Margin Top
                 // |---------------------|- Top Divider
                 // | ------------------- |- Item Top
@@ -146,14 +146,18 @@ public class HorDividerDecoration extends RecyclerView.ItemDecoration {
                     topTop = child.getTop() - params.topMargin;
                     topBottom = child.getTop() - params.topMargin + topDivider.getIntrinsicHeight();
                 }
-                topDivider.setBounds(topleft, topTop, topRight, topBottom);
+
+                Rect topBounds = new Rect(topleft, topTop, topRight, topBottom);
+                Rect topBoundsPadding = dividerCreator.topDividerOffset(childPosition);
+                topDivider.setBounds(insetInside(topBounds, topBoundsPadding));
+//                topDivider.setBounds(topleft, topTop, topRight, topBottom);
                 topDivider.draw(c);
             }
 
             // draw bottom divider
             Drawable bottomDivider = dividerCreator.getBottomDivider(childPosition);
             if (bottomDivider != null) {
-                int bottomleft = left + dividerCreator.bottomDividerOffset(childPosition);
+                int bottomleft = left;
                 int bottomTop = 0;
                 int bottomRight = right;
                 int bottomBottom = 0;
@@ -182,10 +186,28 @@ public class HorDividerDecoration extends RecyclerView.ItemDecoration {
                     bottomTop = child.getBottom() + params.bottomMargin - bottomDivider.getIntrinsicHeight();
                     bottomBottom = child.getBottom() + params.bottomMargin;
                 }
-                bottomDivider.setBounds(bottomleft, bottomTop, bottomRight, bottomBottom);
+
+                Rect bottomBounds = new Rect(bottomleft, bottomTop, bottomRight, bottomBottom);
+                Rect bottomBoundsPadding = dividerCreator.bottomDividerOffset(childPosition);
+                bottomDivider.setBounds(insetInside(bottomBounds, bottomBoundsPadding));
                 bottomDivider.draw(c);
             }
 
         }
+    }
+
+    protected Rect insetInside(Rect bounds, Rect padding) {
+        if (bounds == null) {
+            bounds = new Rect();
+        }
+
+        if (padding == null) {
+            padding = new Rect();
+        }
+
+        return new Rect(bounds.left + padding.left,
+                bounds.top + padding.top,
+                bounds.right - padding.right,
+                bounds.bottom - padding.bottom);
     }
 }

@@ -50,6 +50,15 @@ compile 'com.dianping.android.sdk:shieldCore:1.5.1'
 - 通过提交issue来寻求帮助
 - 联系我们寻求帮助
 
+## ChangeLog
+[2018.3.12]
+-   RecyclerView容器支持设置是否可以滚动
+-   HeaderCell&FooterCell新增置顶置底支持
+-   HeaderCell&FooterCell新增上下分割线完善
+-   优化模块配置方式
+-   优化模块曝光计算逻辑
+-   Bug Fix
+
 ## 贡献代码
 - 欢迎提交issue
 - 欢迎提交PR

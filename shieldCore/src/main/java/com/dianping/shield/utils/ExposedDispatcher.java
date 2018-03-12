@@ -2,7 +2,9 @@ package com.dianping.shield.utils;
 
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 
+import com.dianping.agentsdk.framework.SectionCellInterface;
 import com.dianping.shield.entity.CellType;
 import com.dianping.shield.entity.ExposedAction;
 import com.dianping.shield.feature.CellExposedInterface;
@@ -18,67 +20,6 @@ import java.util.HashMap;
 
 public class ExposedDispatcher {
     private static final long ONE_WEEK_MILLISECONDS = 7 * 24 * 60 * 60 * 1000;
-
-    private static class MyHandler extends Handler {
-        HashMap<Integer, CountObj> exposedActionCountMap = new HashMap<Integer, CountObj>();
-
-        private final WeakReference<ExposedDispatcher> dispatcherWeakReference;
-
-        public MyHandler(ExposedDispatcher dispatcherWeakReference) {
-            this.dispatcherWeakReference = new WeakReference<ExposedDispatcher>(dispatcherWeakReference);
-        }
-
-        @Override
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
-            if (this.dispatcherWeakReference.get() == null) {
-                return;
-            }
-            if (msg.obj == null) {
-                return;
-            }
-
-            ExposedObj exposeObj = (ExposedObj) msg.obj;
-            CountObj hadExposedCountObj = exposedActionCountMap.get(msg.what);
-            int maxExposedCount = 0;
-            if (exposeObj.exposedInterface != null) {
-                maxExposedCount = exposeObj.exposedInterface.maxExposeCount();
-                exposeObj.delayTime = exposeObj.exposedInterface.exposeDuration();
-                if (hadExposedCountObj.count >= maxExposedCount) {
-                    return;
-                }
-                exposeObj.exposedInterface.onExposed(hadExposedCountObj.count + 1);
-            } else if (exposeObj.cellExposedInterface != null) {
-                maxExposedCount = exposeObj.cellExposedInterface.maxExposeCount(exposeObj.section, exposeObj.row);
-                exposeObj.delayTime = exposeObj.cellExposedInterface.exposeDuration(exposeObj.section, exposeObj.row);
-                if (hadExposedCountObj.count >= maxExposedCount) {
-                    return;
-                }
-                exposeObj.cellExposedInterface.onExposed(exposeObj.section, exposeObj.row, hadExposedCountObj.count + 1);
-            } else if (exposeObj.extraExposedInterface != null) {
-                maxExposedCount = exposeObj.extraExposedInterface.maxExtraExposeCount(exposeObj.section, exposeObj.cellType);
-                exposeObj.delayTime = exposeObj.extraExposedInterface.extraCellStayDuration(exposeObj.section, exposeObj.cellType);
-                if (hadExposedCountObj.count >= maxExposedCount) {
-                    return;
-                }
-                exposeObj.extraExposedInterface.onExtraCellExposed(exposeObj.section, exposeObj.cellType, hadExposedCountObj.count + 1);
-            } else {
-                return;
-            }
-
-            hadExposedCountObj.count += 1;
-
-            if (exposeObj.delayTime > ONE_WEEK_MILLISECONDS || exposeObj.delayTime <= 0) {
-                return;
-            }
-
-            Message newMessage = new Message();
-            newMessage.what = msg.what;
-            newMessage.obj = exposeObj;
-            this.sendMessageDelayed(newMessage, exposeObj.delayTime);
-        }
-    }
-
     private MyHandler mExposeHandler;
 
     public ExposedDispatcher() {
@@ -144,6 +85,81 @@ public class ExposedDispatcher {
 
     public void pauseExposed() {
         mExposeHandler.removeCallbacksAndMessages(null);
+    }
+
+    private static class MyHandler extends Handler {
+        private final WeakReference<ExposedDispatcher> dispatcherWeakReference;
+        HashMap<Integer, CountObj> exposedActionCountMap = new HashMap<Integer, CountObj>();
+
+        public MyHandler(ExposedDispatcher dispatcherWeakReference) {
+            this.dispatcherWeakReference = new WeakReference<ExposedDispatcher>(dispatcherWeakReference);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+
+            super.handleMessage(msg);
+            if (this.dispatcherWeakReference.get() == null) {
+                return;
+            }
+            if (msg.obj == null) {
+                return;
+            }
+
+            ExposedObj exposeObj = (ExposedObj) msg.obj;
+            CountObj hadExposedCountObj = exposedActionCountMap.get(msg.what);
+            int maxExposedCount = 0;
+            if (exposeObj.exposedInterface != null) {
+                maxExposedCount = exposeObj.exposedInterface.maxExposeCount();
+                exposeObj.delayTime = exposeObj.exposedInterface.exposeDuration();
+                if (hadExposedCountObj.count >= maxExposedCount) {
+                    return;
+                }
+                exposeObj.exposedInterface.onExposed(hadExposedCountObj.count + 1);
+            } else if (exposeObj.cellExposedInterface != null) {
+
+                if (exposeObj.cellExposedInterface instanceof SectionCellInterface) {
+                    if (exposeObj.section < 0 || (exposeObj.section >= ((SectionCellInterface) exposeObj.cellExposedInterface).getSectionCount())
+                            || exposeObj.row < 0 || (exposeObj.row >= ((SectionCellInterface) exposeObj.cellExposedInterface).getRowCount(exposeObj.section))) {
+                        Log.e("Shield", "Expose Index out of bound");
+                        return;
+                    }
+                }
+
+                maxExposedCount = exposeObj.cellExposedInterface.maxExposeCount(exposeObj.section, exposeObj.row);
+                exposeObj.delayTime = exposeObj.cellExposedInterface.exposeDuration(exposeObj.section, exposeObj.row);
+                if (hadExposedCountObj.count >= maxExposedCount) {
+                    return;
+                }
+                exposeObj.cellExposedInterface.onExposed(exposeObj.section, exposeObj.row, hadExposedCountObj.count + 1);
+            } else if (exposeObj.extraExposedInterface != null) {
+                if (exposeObj.cellExposedInterface instanceof SectionCellInterface) {
+                    if (exposeObj.section < 0 || (exposeObj.section >= ((SectionCellInterface) exposeObj.cellExposedInterface).getSectionCount())) {
+                        Log.e("Shield", "Expose Index out of bound");
+                        return;
+                    }
+                }
+                maxExposedCount = exposeObj.extraExposedInterface.maxExtraExposeCount(exposeObj.section, exposeObj.cellType);
+                exposeObj.delayTime = exposeObj.extraExposedInterface.extraCellStayDuration(exposeObj.section, exposeObj.cellType);
+                if (hadExposedCountObj.count >= maxExposedCount) {
+                    return;
+                }
+                exposeObj.extraExposedInterface.onExtraCellExposed(exposeObj.section, exposeObj.cellType, hadExposedCountObj.count + 1);
+            } else {
+                return;
+            }
+
+            hadExposedCountObj.count += 1;
+
+            if (exposeObj.delayTime > ONE_WEEK_MILLISECONDS || exposeObj.delayTime <= 0) {
+                return;
+            }
+
+            Message newMessage = new Message();
+            newMessage.what = msg.what;
+            newMessage.obj = exposeObj;
+            this.sendMessageDelayed(newMessage, exposeObj.delayTime);
+        }
     }
 
     private static class CountObj {

@@ -21,7 +21,7 @@ public interface SetTopFunctionInterface {
      *  在updateView时更新置顶参数
      * @param topParams 新的置顶参数
      */
-    void updateSetTopParams(SetTopParams topParams);
+    void updateSetTopParams(View topView, SetTopParams topParams);
 
     boolean isTop(View topView);
 }

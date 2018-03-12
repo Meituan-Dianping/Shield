@@ -79,6 +79,7 @@ public class ExposedEngine {
                         temp.owner = info.owner;
                         temp.details.section = info.details.section;
                         temp.details.row = info.details.row;
+                        temp.details.cellType = info.details.cellType;
                         temp.details.isComplete = false;
                         if (innerInfos.contains(temp)) {
                             //PART_TO_FULL
@@ -104,6 +105,7 @@ public class ExposedEngine {
                         temp.owner = info.owner;
                         temp.details.section = info.details.section;
                         temp.details.row = info.details.row;
+                        temp.details.cellType = info.details.cellType;
                         temp.details.isComplete = true;
                         if (innerInfos.contains(temp)) {
                             //FULL_TO_PART
@@ -138,26 +140,29 @@ public class ExposedEngine {
             SectionCellInterface cellInterface = info.owner.getSectionCellInterface();
             if (cellInterface instanceof CellExposedInterface || cellInterface instanceof ExtraCellExposedInterface
                     || cellInterface instanceof CellMoveStatusInterface || cellInterface instanceof ExtraCellMoveStatusInterface) {
-                CellType type = info.owner.getCellType(info.details.section, info.details.row);
-                Pair<Integer, Integer> pair = info.owner.getInnerPosition(info.details.section, info.details.row);
-                ExposeScope scope = getScope(cellInterface, type, pair);
-                if (info.details.isComplete) {
-                    //FULL_TO_END
-                    //先调移入移出屏幕回
-                    dispatchCellMove(cellInterface, ExposeScope.PX, direction, pair.first, pair.second, type, false, false);
-                    dispatchCellMove(cellInterface, ExposeScope.COMPLETE, direction, pair.first, pair.second, type, false, false);
+                //过滤掉数据变化导致的index越界
+                if (info.owner.getSectionCount() > info.details.section && info.owner.getRowCount(info.details.section) > info.details.row) {
+                    CellType type = info.owner.getCellType(info.details.section, info.details.row);
+                    Pair<Integer, Integer> pair = info.owner.getInnerPosition(info.details.section, info.details.row);
+                    ExposeScope scope = getScope(cellInterface, type, pair);
+                    if (info.details.isComplete) {
+                        //FULL_TO_END
+                        //先调移入移出屏幕回
+                        dispatchCellMove(cellInterface, ExposeScope.PX, direction, pair.first, pair.second, type, false, false);
+                        dispatchCellMove(cellInterface, ExposeScope.COMPLETE, direction, pair.first, pair.second, type, false, false);
 
-                    //再走曝光逻辑
-                    //complete和px都是移除
-                    dispatcher.exposedAction(new ExposedAction(cellInterface, pair.first, pair.second, type, false, false));
-                } else {
-                    //PART_TO_END
-                    //先调移入屏幕回调
-                    dispatchCellMove(cellInterface, ExposeScope.COMPLETE, direction, pair.first, pair.second, type, false, false);
-                    //再走曝光逻辑
-                    //只有px是移除
-                    if (scope == ExposeScope.PX) {
+                        //再走曝光逻辑
+                        //complete和px都是移除
                         dispatcher.exposedAction(new ExposedAction(cellInterface, pair.first, pair.second, type, false, false));
+                    } else {
+                        //PART_TO_END
+                        //先调移入屏幕回调
+                        dispatchCellMove(cellInterface, ExposeScope.COMPLETE, direction, pair.first, pair.second, type, false, false);
+                        //再走曝光逻辑
+                        //只有px是移除
+                        if (scope == ExposeScope.PX) {
+                            dispatcher.exposedAction(new ExposedAction(cellInterface, pair.first, pair.second, type, false, false));
+                        }
                     }
                 }
             }
@@ -177,7 +182,7 @@ public class ExposedEngine {
 
                     AdapterExposedList newList = entry.getValue();
                     if (newList.partExposedList.isEmpty()
-                            && newList.completeExposedList.size() == entry.getKey().getTotalItemCount()) {
+                            && newList.completeExposedList.size() == entry.getKey().getItemCount()) {
                         //SC_NEW_FULL
                         //先调移入屏幕回调
                         dispatchCellMove(sectionCellInterface, ExposeScope.PX, direction, -1, -1, null, true, true);
@@ -209,7 +214,7 @@ public class ExposedEngine {
                                 && newList.partExposedList.equals(oldList.partExposedList))) {
                             //内部列表不一样
                             if (newList.partExposedList.isEmpty()
-                                    && newList.completeExposedList.size() == entry.getKey().getTotalItemCount()) {
+                                    && newList.completeExposedList.size() == entry.getKey().getItemCount()) {
                                 //新的part为空，full为全, SC_PART_TO_FULL,不是移出,remove temp
                                 //先调移入屏幕回调
                                 dispatchCellMove(sectionCellInterface, ExposeScope.COMPLETE, direction, -1, -1, null, true, true);
@@ -221,7 +226,7 @@ public class ExposedEngine {
                                 }
 
                             } else if (oldList.partExposedList.isEmpty()
-                                    && oldList.completeExposedList.size() == entry.getKey().getTotalItemCount()) {
+                                    && oldList.completeExposedList.size() == entry.getKey().getItemCount()) {
                                 //老的part为空，full为全, SC_FULL_TO_PART,不是移出,remove temp
                                 //先调移入屏幕回调
                                 dispatchCellMove(sectionCellInterface, ExposeScope.PX, direction, -1, -1, null, false, true);
@@ -249,7 +254,7 @@ public class ExposedEngine {
             if (sectionCellInterface instanceof ExposedInterface || sectionCellInterface instanceof MoveStatusInterface) {
                 AdapterExposedList newList = entry.getValue();
                 if (newList.partExposedList.isEmpty()
-                        && newList.completeExposedList.size() == entry.getKey().getTotalItemCount()) {
+                        && newList.completeExposedList.size() == entry.getKey().getItemCount()) {
                     //FULL_TO_END
                     //先调移入移出屏幕回调
                     dispatchCellMove(sectionCellInterface, ExposeScope.PX, direction, -1, -1, null, false, true);

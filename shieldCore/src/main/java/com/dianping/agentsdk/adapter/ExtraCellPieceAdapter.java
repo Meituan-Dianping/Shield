@@ -1,12 +1,15 @@
 package com.dianping.agentsdk.adapter;
 
 import android.content.Context;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
 import android.util.Pair;
 import android.view.ViewGroup;
 
+import com.dianping.agentsdk.framework.SectionExtraCellDividerOffsetInterface;
 import com.dianping.agentsdk.framework.SectionExtraCellInterface;
+import com.dianping.agentsdk.framework.SectionExtraTopDividerCellInterface;
 import com.dianping.agentsdk.sectionrecycler.section.MergeSectionDividerAdapter;
 import com.dianping.agentsdk.sectionrecycler.section.PieceAdapter;
 import com.dianping.shield.entity.CellType;
@@ -18,8 +21,19 @@ import com.dianping.shield.entity.CellType;
  */
 public class ExtraCellPieceAdapter extends WrapperPieceAdapter<SectionExtraCellInterface> {
 
+    protected SectionExtraTopDividerCellInterface extraTopDividerCellInterface;
+    protected SectionExtraCellDividerOffsetInterface extraCellDividerOffsetInterface;
+
     public ExtraCellPieceAdapter(@NonNull Context context, PieceAdapter adapter, SectionExtraCellInterface sectionExtraCellInterface) {
         super(context, adapter, sectionExtraCellInterface);
+    }
+
+    public void setExtraTopDividerCellInterface(SectionExtraTopDividerCellInterface extraTopDividerCellInterface) {
+        this.extraTopDividerCellInterface = extraTopDividerCellInterface;
+    }
+
+    public void setExtraCellDividerOffsetInterface(SectionExtraCellDividerOffsetInterface extraCellDividerOffsetInterface) {
+        this.extraCellDividerOffsetInterface = extraCellDividerOffsetInterface;
     }
 
     @Override
@@ -55,19 +69,54 @@ public class ExtraCellPieceAdapter extends WrapperPieceAdapter<SectionExtraCellI
                     + extraInterface.getFooterViewTypeCount();
         }
         return super.getItemViewType(section, row);
+
     }
 
     @Override
     public int getInnerType(int wrappedType) {
         if (extraInterface != null) {
-            int typeOffset = extraInterface.getHeaderViewTypeCount() + extraInterface.getFooterViewTypeCount();
-            if (wrappedType < typeOffset) {
-                //只是区分了非内部Type，而没有区分Header还是Footer
-                return TYPE_NOT_EXIST;
+            if (wrappedType < extraInterface.getHeaderViewTypeCount()) {
+                return wrappedType;
+            } else if (wrappedType < extraInterface.getHeaderViewTypeCount() + extraInterface.getFooterViewTypeCount()) {
+                return wrappedType - extraInterface.getHeaderViewTypeCount();
+            } else {
+                int typeOffset = extraInterface.getHeaderViewTypeCount() + extraInterface.getFooterViewTypeCount();
+                return super.getInnerType(wrappedType - typeOffset);
             }
-            return super.getInnerType(wrappedType - typeOffset);
         }
         return super.getInnerType(wrappedType);
+    }
+
+    @Override
+    public Drawable getTopDivider(int section, int row) {
+        Pair<Integer, Integer> pair = getInnerPosition(section, row);
+        if (extraInterface != null && extraInterface instanceof SectionExtraTopDividerCellInterface) {
+            CellType cellType = getCellType(section, row);
+            if (cellType == CellType.HEADER) {
+                return ((SectionExtraTopDividerCellInterface) extraInterface).getTopDividerForHeader(pair.first);
+            }
+            if (cellType == CellType.FOOTER) {
+                return ((SectionExtraTopDividerCellInterface) extraInterface).getTopDividerForFooter(pair.first);
+            }
+        }
+        return super.getTopDivider(pair.first, pair.second);
+    }
+
+    @Override
+    public Drawable getBottomDivider(int section, int row) {
+        Pair<Integer, Integer> pair = getInnerPosition(section, row);
+        if (extraInterface != null) {
+            CellType cellType = getCellType(section, row);
+            if (extraInterface instanceof SectionExtraTopDividerCellInterface) {
+                if (cellType == CellType.HEADER || cellType == CellType.FOOTER) {
+                    return ((SectionExtraTopDividerCellInterface) extraInterface).getBottomDividerForHeader(pair.first);
+                }
+            }
+            if (cellType != CellType.HEADER && cellType != CellType.FOOTER) {
+                return super.getBottomDivider(pair.first, pair.second);
+            }
+        }
+        return null;
     }
 
     //原始sectoin和row
@@ -93,6 +142,17 @@ public class ExtraCellPieceAdapter extends WrapperPieceAdapter<SectionExtraCellI
             }
         }
         return super.getCellType(wrappedSection, innerRow);
+    }
+
+    @Override
+    public CellType getCellType(int viewType) {
+        if (viewType < extraInterface.getHeaderViewTypeCount()) {
+            return CellType.HEADER;
+        } else if (viewType < extraInterface.getHeaderViewTypeCount() + extraInterface.getFooterViewTypeCount()) {
+            return CellType.FOOTER;
+        } else {
+            return super.getCellType(viewType - extraInterface.getHeaderViewTypeCount() - extraInterface.getFooterViewTypeCount());
+        }
     }
 
     //原始sectoin和row
@@ -159,65 +219,107 @@ public class ExtraCellPieceAdapter extends WrapperPieceAdapter<SectionExtraCellI
     }
 
     @Override
-    public Drawable getBottomDivider(int section, int row) {
-        Pair<Integer, Integer> pair = getInnerPosition(section, row);
-        if (extraInterface != null) {
-            CellType cellType = getCellType(section, row);
-            if (cellType != CellType.HEADER && cellType != CellType.FOOTER) {
-                return super.getBottomDivider(pair.first, pair.second);
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public int bottomDividerOffset(int section, int row) {
+    public Rect bottomDividerOffset(int section, int row) {
         //加row偏转
 
         Pair<Integer, Integer> pair = getInnerPosition(section, row);
-        if (extraInterface != null) {
-            CellType cellType = getCellType(section, row);
-            if (cellType == CellType.HEADER) {
-                // 控制 Header View 的 Divider Offset
-                float headerDividerOffset = extraInterface.getHeaderDividerOffset(pair.first);
-                if (headerDividerOffset >= 0) {
-                    return (int) headerDividerOffset;
-                } else {
-                    return NO_OFFSET;
-                }
+        CellType cellType = getCellType(section, row);
+
+        if (cellType == CellType.HEADER) {
+
+            if (extraCellDividerOffsetInterface != null) {
+                Rect bottomDividerOffsetForHeader = new Rect();
+                bottomDividerOffsetForHeader.left = extraCellDividerOffsetInterface.getHeaderBottomDividerLeftOffset(section);
+                bottomDividerOffsetForHeader.right = extraCellDividerOffsetInterface.getHeaderBottomDividerRightOffset(section);
+                return bottomDividerOffsetForHeader;
             }
-            if (cellType == CellType.FOOTER) {
-                // 控制 Footer View 的 Divider Offset
-                float footerDividerOffset = extraInterface.getFooterDividerOffset(pair.first);
-                if (footerDividerOffset >= 0) {
-                    return (int) footerDividerOffset;
-                } else {
-                    return NO_OFFSET;
+
+            if (extraInterface != null) {
+                Rect bottomDividerOffsetForHeader = new Rect();
+                int headerLeft = (int) extraInterface.getHeaderDividerOffset(section);
+                // com.dianping.agentsdk.framework.SectionExtraCellInterface.getHeaderDividerOffset(int)
+                // 方法返回 负值 视为不进行设置
+                if (headerLeft < 0) {
+                    return null;
                 }
+                bottomDividerOffsetForHeader.left = headerLeft;
+                return bottomDividerOffsetForHeader;
             }
+
+            return null;
+
+        } else if (cellType == CellType.FOOTER) {
+
+            if (extraCellDividerOffsetInterface != null) {
+                Rect bottomDividerOffsetForFooter = new Rect();
+                bottomDividerOffsetForFooter.left = extraCellDividerOffsetInterface.getFooterBottomDividerLeftOffset(section);
+                bottomDividerOffsetForFooter.right = extraCellDividerOffsetInterface.getFooterBottomDividerRightOffset(section);
+                return bottomDividerOffsetForFooter;
+            }
+
+            if (extraInterface != null) {
+                Rect bottomDividerOffsetForFooter = new Rect();
+                int footerLeft = (int) extraInterface.getFooterDividerOffset(section);
+                // com.dianping.agentsdk.framework.SectionExtraCellInterface.getFooterDividerOffset(int)
+                // 方法返回 负值 视为不进行设置
+                if (footerLeft < 0) {
+                    return null;
+                }
+                bottomDividerOffsetForFooter.left = footerLeft;
+                return bottomDividerOffsetForFooter;
+            }
+
+            return null;
+
+        } else {
+            return super.bottomDividerOffset(pair.first, pair.second);
         }
-        return super.bottomDividerOffset(pair.first, pair.second);
 
     }
 
     @Override
-    public int topDividerOffset(int section, int row) {
+    public Rect topDividerOffset(int section, int row) {
         //加row偏转
         Pair<Integer, Integer> pair = getInnerPosition(section, row);
-        if (extraInterface != null) {
+        CellType cellType = getCellType(section, row);
 
-            CellType cellType = getCellType(section, row);
-            if (cellType == CellType.HEADER) {
-                return NO_OFFSET;
-            }
-            if (cellType == CellType.FOOTER) {
-                return NO_OFFSET;
+        if (cellType == CellType.HEADER) {
+
+            if (extraCellDividerOffsetInterface != null) {
+                Rect topDividerOffsetForHeader = new Rect();
+                topDividerOffsetForHeader.left = extraCellDividerOffsetInterface.getHeaderTopDividerLeftOffset(section);
+                topDividerOffsetForHeader.right = extraCellDividerOffsetInterface.getHeaderTopDividerRightOffset(section);
+                return topDividerOffsetForHeader;
             }
 
+//            if (extraTopDividerCellInterface != null) {
+//                Rect topDividerOffsetForHeader = new Rect();
+//                topDividerOffsetForHeader.left = (int) extraTopDividerCellInterface.getHeaderTopDividerLeftOffset(section, row);
+//                topDividerOffsetForHeader.right = (int) extraTopDividerCellInterface.getHeaderTopDividerRightOffset(section, row);
+//                return topDividerOffsetForHeader;
+//            }
+            return null;
+
+        } else if (cellType == CellType.FOOTER) {
+            if (extraCellDividerOffsetInterface != null) {
+                Rect topDividerOffsetForFooter = new Rect();
+                topDividerOffsetForFooter.left = extraCellDividerOffsetInterface.getFooterTopDividerLeftOffset(section);
+                topDividerOffsetForFooter.right = extraCellDividerOffsetInterface.getFooterTopDividerRightOffset(section);
+                return topDividerOffsetForFooter;
+            }
+
+//            if (extraTopDividerCellInterface != null) {
+//                Rect topDividerOffsetForFooter = new Rect();
+//                topDividerOffsetForFooter.left = (int) extraTopDividerCellInterface.getFooterTopDividerLeftOffset(section);
+//                topDividerOffsetForFooter.right = (int) extraTopDividerCellInterface.getFooterTopDividerRightOffset(section);
+//                return topDividerOffsetForFooter;
+//            }
+
+            return null;
+
+        } else {
+            return super.topDividerOffset(pair.first, pair.second);
         }
-
-        return super.topDividerOffset(pair.first, pair.second);
-
     }
 
     @Override
@@ -244,7 +346,6 @@ public class ExtraCellPieceAdapter extends WrapperPieceAdapter<SectionExtraCellI
         //加row偏转
         Pair<Integer, Integer> pair = getInnerPosition(section, row);
         if (extraInterface != null) {
-
             CellType cellType = getCellType(section, row);
             if (cellType == CellType.HEADER) {
                 extraInterface.updateHeaderView(holder.itemView, pair.first, (ViewGroup) holder.itemView.getParent());
@@ -256,7 +357,6 @@ public class ExtraCellPieceAdapter extends WrapperPieceAdapter<SectionExtraCellI
             }
 
         }
-
         super.onBindViewHolder(holder, pair.first, pair.second);
     }
 

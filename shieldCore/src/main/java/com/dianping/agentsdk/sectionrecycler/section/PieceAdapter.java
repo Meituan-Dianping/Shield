@@ -1,8 +1,10 @@
 package com.dianping.agentsdk.sectionrecycler.section;
 
 import android.content.Context;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
+import android.support.v7.widget.RecyclerView;
 import android.util.Pair;
 
 import com.dianping.agentsdk.framework.AgentInterface;
@@ -26,8 +28,11 @@ public abstract class PieceAdapter extends SectionDAdapter<MergeSectionDividerAd
 
     protected boolean addSpaceForDivider = false;
 
+    protected AdapterObserver adapterObserver = new AdapterObserver();
+
     public PieceAdapter(@NonNull Context context) {
         super(context);
+        registerAdapterDataObserver(adapterObserver);
     }
 
     public String getMappingKey() {
@@ -139,13 +144,13 @@ public abstract class PieceAdapter extends SectionDAdapter<MergeSectionDividerAd
     }
 
     @Override
-    public int topDividerOffset(int section, int position) {
-        return NO_OFFSET;
+    public Rect topDividerOffset(int section, int position) {
+        return null;
     }
 
     @Override
-    public int bottomDividerOffset(int section, int position) {
-        return NO_OFFSET;
+    public Rect bottomDividerOffset(int section, int position) {
+        return null;
     }
 
     @Override
@@ -170,6 +175,10 @@ public abstract class PieceAdapter extends SectionDAdapter<MergeSectionDividerAd
         return CellType.NORMAL;
     }
 
+    public CellType getCellType(int viewType) {
+        return CellType.NORMAL;
+    }
+
     public boolean isInnerSection(int wrappedSection) {
         return true;
     }
@@ -181,5 +190,51 @@ public abstract class PieceAdapter extends SectionDAdapter<MergeSectionDividerAd
             count += getRowCount(i);
         }
         return count;
+    }
+
+    public void onAdapterChanged() {
+    }
+
+    public void onAdapterItemRangeChanged(int positionStart, int itemCount) {
+    }
+
+    public void onAdapterItemRangeChanged(int positionStart, int itemCount, Object payload) {
+    }
+
+    public void onAdapterItemRangeInserted(int positionStart, int itemCount) {
+    }
+
+    public void onAdapterItemRangeRemoved(int positionStart, int itemCount) {
+    }
+    
+    public void onAdapterItemRangeMoved(int fromPosition, int toPosition, int itemCount) {
+    }
+
+    public class AdapterObserver extends RecyclerView.AdapterDataObserver {
+        public void onChanged() {
+            onAdapterChanged();
+        }
+
+        public void onItemRangeChanged(int positionStart, int itemCount) {
+            onAdapterItemRangeChanged(positionStart, itemCount);
+        }
+
+        public void onItemRangeChanged(int positionStart, int itemCount, Object payload) {
+            // fallback to onItemRangeChanged(positionStart, itemCount) if app
+            // does not override this method.
+            onAdapterItemRangeChanged(positionStart, itemCount, payload);
+        }
+
+        public void onItemRangeInserted(int positionStart, int itemCount) {
+            onAdapterItemRangeInserted(positionStart, itemCount);
+        }
+
+        public void onItemRangeRemoved(int positionStart, int itemCount) {
+            onAdapterItemRangeRemoved(positionStart, itemCount);
+        }
+
+        public void onItemRangeMoved(int fromPosition, int toPosition, int itemCount) {
+            onAdapterItemRangeMoved(fromPosition, toPosition, itemCount);
+        }
     }
 }
