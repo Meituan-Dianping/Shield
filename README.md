@@ -44,7 +44,7 @@ compile 'com.dianping.android.sdk:shieldCore:1.6.0'
 5. 通过generaterDefaultConfigAgentList方法指定模块配置。
 
 ## 博客文章
-[Shield——开源的移动端页面模块化开发框架](https://tech.meituan.com/shield-opensource.html)
+[Shield——开源的移动端页面模块化开发框架](https://tech.meituan.com/shield_opensource.html)
 
 ## 技术支持
 - 通过提交issue来寻求帮助
