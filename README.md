@@ -59,6 +59,13 @@ compile 'com.dianping.android.sdk:shieldCore:1.6.0'
 -   优化模块曝光计算逻辑
 -   Bug Fix
 
+[2019.1.30]
+- 基于Kotlin的全面重构
+- 新的视图管理器ShieldNodeCellManager
+- 新的生命周期路由ShieldLifeCycler
+- 新的ShieldSectionCellItem视图层表达方式
+- Bugfix
+
 ## 贡献代码
 - 欢迎提交issue
 - 欢迎提交PR
