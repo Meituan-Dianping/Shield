@@ -30,25 +30,25 @@ public abstract class ShieldConfig implements AgentListConfig {
 
             for (int j = 0; j < groupList.size(); j++) {
                 ShieldConfigInfo shieldConfigInfo = groupList.get(j);
-                if (shieldConfigInfo.agentClass != null) {
-                    try {
-                        agents.put(shieldConfigInfo.hostName,
-                                AgentInfoHelper.createAgentInfo(shieldConfigInfo.agentClass, i, j,
-                                        shieldConfig.size(), groupList.size()));
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        continue;
-                    }
-                } else if (shieldConfigInfo.agentPath != null && !"".equals(shieldConfigInfo.agentPath)) {
-                    try {
+                try {
+                    AgentInfo agentInfo = null;
+                    if (shieldConfigInfo.agentClass != null) {
+                        agentInfo = AgentInfoHelper.createAgentInfo(shieldConfigInfo.agentClass, i, j,
+                                shieldConfig.size(), groupList.size());
+
+                    } else if (shieldConfigInfo.agentPath != null && !"".equals(shieldConfigInfo.agentPath)) {
                         Class agentClass = Class.forName(shieldConfigInfo.agentPath);
-                        agents.put(shieldConfigInfo.hostName,
-                                AgentInfoHelper.createAgentInfo(agentClass, i, j,
-                                        shieldConfig.size(), groupList.size()));
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        continue;
+                        agentInfo = AgentInfoHelper.createAgentInfo(agentClass, i, j,
+                                shieldConfig.size(), groupList.size());
                     }
+                    if (agentInfo != null) {
+                        agentInfo.configPriority = shieldConfigInfo.priority;
+                        agentInfo.arguments = shieldConfigInfo.arguments;
+                        agents.put(shieldConfigInfo.hostName, agentInfo);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    continue;
                 }
             }
         }

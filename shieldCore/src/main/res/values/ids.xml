@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <item name="item_click_tag_key_id" type="id"/>
-    <item name="item_longclick_tag_key_id" type="id"/>
+    <item name="item_click_tag_key_id" type="id" />
+    <item name="item_click_tag_data_id" type="id" />
+    <item name="item_longclick_tag_key_id" type="id" />
+    <item name="item_longclick_tag_data_id" type="id" />
 </resources>

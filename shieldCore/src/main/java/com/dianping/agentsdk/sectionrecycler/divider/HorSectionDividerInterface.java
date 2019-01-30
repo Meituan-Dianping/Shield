@@ -20,12 +20,16 @@ public interface HorSectionDividerInterface {
      */
     float getSectionHeaderHeight(int section);
 
+    Drawable getSectionHeaderDrawable(int section);
+
     /**
      * Returns the Height left under the given section
      * @param section the section index to query
      * @return the height in px.
      */
     float getSectionFooterHeight(int section);
+
+    Drawable getSectionFooterDrawable(int section);
 
     /**
      * Returns whether we should leave space for the top divider

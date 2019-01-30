@@ -5,10 +5,14 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
 
+import com.dianping.agentsdk.framework.DividerInfo;
 import com.dianping.agentsdk.framework.DividerInterface;
 import com.dianping.agentsdk.framework.DividerOffsetInterface;
+import com.dianping.agentsdk.framework.SectionDividerInfoInterface;
 import com.dianping.agentsdk.framework.TopDividerInterface;
+import com.dianping.agentsdk.sectionrecycler.divider.DividerInfoInterface;
 import com.dianping.agentsdk.sectionrecycler.section.PieceAdapter;
+import com.dianping.shield.entity.CellType;
 
 /**
  * Created by hezhi on 16/6/24.
@@ -18,6 +22,8 @@ public class SectionDividerPieceAdapter extends WrapperPieceAdapter<DividerInter
 
     protected TopDividerInterface topDividerInterface;
     protected DividerOffsetInterface dividerOffsetInterface;
+    protected SectionDividerInfoInterface sectionDividerInfoInterface;
+    protected DividerInfoInterface dividerInfoInterface;
 
     public SectionDividerPieceAdapter(@NonNull Context context, @NonNull PieceAdapter adapter, DividerInterface extraInterface) {
         super(context, adapter, extraInterface);
@@ -29,6 +35,29 @@ public class SectionDividerPieceAdapter extends WrapperPieceAdapter<DividerInter
 
     public void setDividerOffsetInterface(DividerOffsetInterface dividerOffsetInterface) {
         this.dividerOffsetInterface = dividerOffsetInterface;
+    }
+
+    public void setSectionDividerInfoInterface(SectionDividerInfoInterface dividerInfoInterface) {
+        this.sectionDividerInfoInterface = dividerInfoInterface;
+    }
+
+    public void setDividerInfoInterface(DividerInfoInterface dividerInfoInterface) {
+        this.dividerInfoInterface = dividerInfoInterface;
+    }
+
+    @Override
+    public DividerInfo getDividerInfo(int section, int row) {
+        DividerInfo dividerInfo = null;
+        if (dividerInfoInterface != null) {
+            dividerInfo = this.dividerInfoInterface.getDividerInfo(CellType.NORMAL, section, row);
+        }
+        if (dividerInfo == null && sectionDividerInfoInterface != null) {
+            dividerInfo = this.sectionDividerInfoInterface.getDividerInfo(section);
+        }
+        if (dividerInfo != null) {
+            return dividerInfo;
+        }
+        return super.getDividerInfo(section, row);
     }
 
     //第一个row的上线
@@ -66,7 +95,9 @@ public class SectionDividerPieceAdapter extends WrapperPieceAdapter<DividerInter
             Rect bottomDividerOffset = new Rect();
             bottomDividerOffset.left = dividerOffsetInterface.getDividerLeftOffset(section, row);
             bottomDividerOffset.right = dividerOffsetInterface.getDividerRightOffset(section, row);
-            return bottomDividerOffset;
+            if (bottomDividerOffset.left >= 0 || bottomDividerOffset.right >= 0) {
+                return bottomDividerOffset;
+            }
         }
 
         if (extraInterface != null) {

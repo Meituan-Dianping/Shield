@@ -1,11 +1,14 @@
 package com.dianping.agentsdk.adapter;
 
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
 
 import com.dianping.agentsdk.framework.LinkType;
+import com.dianping.agentsdk.framework.SectionHeaderFooterDrawableInterface;
 import com.dianping.agentsdk.framework.SectionLinkCellInterface;
 import com.dianping.agentsdk.sectionrecycler.section.PieceAdapter;
+import com.dianping.shield.feature.SectionTitleInterface;
 
 /**
  * Created by runqi.wei
@@ -14,8 +17,19 @@ import com.dianping.agentsdk.sectionrecycler.section.PieceAdapter;
  */
 public class SectionLinkPieceAdapter extends WrapperPieceAdapter<SectionLinkCellInterface> {
 
+    protected SectionHeaderFooterDrawableInterface headerFooterDrawableInterface;
+    protected SectionTitleInterface sectionTitleInterface;
+
     public SectionLinkPieceAdapter(@NonNull Context context, @NonNull PieceAdapter adapter, SectionLinkCellInterface extraInterface) {
         super(context, adapter, extraInterface);
+    }
+
+    public void setSectionTitleInterface(SectionTitleInterface sectionTitleInterface) {
+        this.sectionTitleInterface = sectionTitleInterface;
+    }
+
+    public void setHeaderFooterDrawableInterface(SectionHeaderFooterDrawableInterface headerFooterDrawableInterface) {
+        this.headerFooterDrawableInterface = headerFooterDrawableInterface;
     }
 
     @Override
@@ -34,6 +48,30 @@ public class SectionLinkPieceAdapter extends WrapperPieceAdapter<SectionLinkCell
             return extraInterface.getSectionFooterHeight(section);
         }
         return super.getSectionFooterHeight(section);
+    }
+
+    @Override
+    public Drawable getSectionHeaderDrawable(int section) {
+        if (headerFooterDrawableInterface != null && isInnerSection(section)) {
+            return headerFooterDrawableInterface.getHeaderDrawable(section);
+        }
+        return super.getSectionHeaderDrawable(section);
+    }
+
+    @Override
+    public Drawable getSectionFooterDrawable(int section) {
+        if (headerFooterDrawableInterface != null && isInnerSection(section)) {
+            return headerFooterDrawableInterface.getFooterDrawable(section);
+        }
+        return super.getSectionFooterDrawable(section);
+    }
+
+    @Override
+    public String getSectionTitle(int section) {
+        if (sectionTitleInterface != null && isInnerSection(section)) {
+            return sectionTitleInterface.getSectionTitle(section);
+        }
+        return super.getSectionTitle(section);
     }
 
     @Override

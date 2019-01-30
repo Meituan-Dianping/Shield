@@ -8,11 +8,15 @@ import android.util.Pair;
 import android.view.ViewGroup;
 
 import com.dianping.agentsdk.framework.AgentInterface;
+import com.dianping.agentsdk.framework.DividerInfo;
 import com.dianping.agentsdk.framework.LinkType;
 import com.dianping.agentsdk.framework.SectionCellInterface;
 import com.dianping.agentsdk.sectionrecycler.section.MergeSectionDividerAdapter;
 import com.dianping.agentsdk.sectionrecycler.section.PieceAdapter;
+import com.dianping.shield.adapter.TopPositionAdapter;
 import com.dianping.shield.entity.CellType;
+
+import java.util.ArrayList;
 
 /**
  * Created by hezhi on 16/6/23.
@@ -59,8 +63,42 @@ public class WrapperPieceAdapter<EI> extends PieceAdapter {
     }
 
     @Override
+    public Drawable getSectionHeaderDrawable(int section) {
+//        if (!TextUtils.isEmpty(getSectionTitle(section))) {
+//            return textToDrawable(getSectionTitle(section));
+//        }
+        return adapter.getSectionHeaderDrawable(section);
+    }
+
+//    public Drawable textToDrawable(String textStr) {
+//        Bitmap bitmap = Bitmap.createBitmap(200, 250, Bitmap.Config.ARGB_8888);
+//        Canvas canvas = new Canvas(bitmap);
+//        Paint paint = new Paint();
+//        paint.setTextSize(ViewUtils.sp2px(getContext(),14));
+//        paint.setTextAlign(Paint.Align.LEFT);
+//        paint.setColor(Color.BLUE);
+//        Paint.FontMetrics fm = paint.getFontMetrics();
+//        canvas.drawText(textStr, 0, 145 + fm.top - fm.ascent, paint);
+//        canvas.save();
+//        Drawable drawableright = new BitmapDrawable(bitmap);
+//        drawableright.setBounds(0, 0, drawableright.getMinimumWidth(),
+//                drawableright.getMinimumHeight());
+//        return drawableright;
+//    }
+
+    @Override
     public float getSectionFooterHeight(int section) {
         return adapter.getSectionFooterHeight(section);
+    }
+
+    @Override
+    public Drawable getSectionFooterDrawable(int section) {
+        return adapter.getSectionFooterDrawable(section);
+    }
+
+    @Override
+    public String getSectionTitle(int section) {
+        return adapter.getSectionTitle(section);
     }
 
     @Override
@@ -81,6 +119,11 @@ public class WrapperPieceAdapter<EI> extends PieceAdapter {
     @Override
     public Rect bottomDividerOffset(int section, int row) {
         return adapter.bottomDividerOffset(section, row);
+    }
+
+    @Override
+    public DividerInfo getDividerInfo(int section, int row) {
+        return adapter.getDividerInfo(section, row);
     }
 
     @Override
@@ -220,5 +263,10 @@ public class WrapperPieceAdapter<EI> extends PieceAdapter {
     public void onAdapterItemRangeMoved(int fromPosition, int toPosition, int itemCount) {
         super.onAdapterItemRangeMoved(fromPosition, toPosition, itemCount);
         getInnerAdapter().onAdapterItemRangeMoved(fromPosition, toPosition, itemCount);
+    }
+
+    @Override
+    public ArrayList<TopPositionAdapter.TopInfo> getTopInfoList() {
+        return getInnerAdapter().getTopInfoList();
     }
 }

@@ -66,8 +66,10 @@ public class ExposedDispatcher {
             int temExposedCount = 0;
             if (mExposeHandler.exposedActionCountMap.containsKey(what)) {
                 temExposedCount = mExposeHandler.exposedActionCountMap.get(what).count;
+                Log.d("ExposeCountMap","check count for " + what + ", count = " + temExposedCount + " Action = " + exposedAction);
             } else {
                 mExposeHandler.exposedActionCountMap.put(what, new CountObj(0));
+                Log.d("ExposeCountMap","ExposeCountMap.put(" + what + "， 0), Action = " + exposedAction);
             }
             if (temExposedCount < exposeCount && delayTime <= ONE_WEEK_MILLISECONDS) {
                 Message exposeMessage = new Message();
@@ -132,9 +134,10 @@ public class ExposedDispatcher {
                     return;
                 }
                 exposeObj.cellExposedInterface.onExposed(exposeObj.section, exposeObj.row, hadExposedCountObj.count + 1);
+                Log.d("ExposedDispatcher", "OnCellExposed - (" + exposeObj.section + ", " + exposeObj.row + "), CellType = " + exposeObj.cellType);
             } else if (exposeObj.extraExposedInterface != null) {
-                if (exposeObj.cellExposedInterface instanceof SectionCellInterface) {
-                    if (exposeObj.section < 0 || (exposeObj.section >= ((SectionCellInterface) exposeObj.cellExposedInterface).getSectionCount())) {
+                if (exposeObj.extraExposedInterface instanceof SectionCellInterface) {
+                    if (exposeObj.section < 0 || (exposeObj.section >= ((SectionCellInterface) exposeObj.extraExposedInterface).getSectionCount())) {
                         Log.e("Shield", "Expose Index out of bound");
                         return;
                     }
@@ -145,6 +148,7 @@ public class ExposedDispatcher {
                     return;
                 }
                 exposeObj.extraExposedInterface.onExtraCellExposed(exposeObj.section, exposeObj.cellType, hadExposedCountObj.count + 1);
+                Log.d("ExposedDispatcher", "OnExtraCellExposed - (" + exposeObj.section + ", " + exposeObj.row + "), CellType = " + exposeObj.cellType);
             } else {
                 return;
             }

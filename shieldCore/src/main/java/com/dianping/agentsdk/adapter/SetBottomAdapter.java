@@ -78,6 +78,9 @@ public class SetBottomAdapter extends WrapperPieceAdapter<SetBottomInterface> {
                 onAdapterChanged();
             }
             if (emptyBottomViewHolderForHeader != null) {
+                if (emptyBottomViewHolderForHeader.itemView != null && emptyBottomViewHolderForHeader.itemView.getParent() instanceof ViewGroup) {
+                    ((ViewGroup) emptyBottomViewHolderForHeader.itemView.getParent()).removeView(emptyBottomViewHolderForHeader.itemView);
+                }
                 return emptyBottomViewHolderForHeader;
             }
 
@@ -89,6 +92,9 @@ public class SetBottomAdapter extends WrapperPieceAdapter<SetBottomInterface> {
                 onAdapterChanged();
             }
             if (emptyBottomViewHolderForFooter != null) {
+                if (emptyBottomViewHolderForFooter.itemView != null && emptyBottomViewHolderForFooter.itemView.getParent() instanceof ViewGroup) {
+                    ((ViewGroup) emptyBottomViewHolderForFooter.itemView.getParent()).removeView(emptyBottomViewHolderForFooter.itemView);
+                }
                 return emptyBottomViewHolderForFooter;
             }
 
@@ -99,6 +105,9 @@ public class SetBottomAdapter extends WrapperPieceAdapter<SetBottomInterface> {
                 onAdapterChanged();
             }
             if (emptyBottomViewHolder != null) {
+                if (emptyBottomViewHolder.itemView != null && emptyBottomViewHolder.itemView.getParent() instanceof ViewGroup) {
+                    ((ViewGroup) emptyBottomViewHolder.itemView.getParent()).removeView(emptyBottomViewHolder.itemView);
+                }
                 return emptyBottomViewHolder;
             }
         }

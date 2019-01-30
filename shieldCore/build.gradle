@@ -1,12 +1,25 @@
+buildscript {
+    ext.kotlin_version = '1.2.41'
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
 apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
 apply from: rootProject.file("upload_bintray.gradle")
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion = '26.0.2'
+    compileSdkVersion 26
+    buildToolsVersion = '27.0.3'
     defaultConfig {
-        minSdkVersion 15
-        targetSdkVersion 23
+        minSdkVersion 16
+        targetSdkVersion 26
     }
 
     buildTypes {
@@ -18,8 +31,9 @@ android {
 }
 
 dependencies {
-    compile 'com.android.support:support-v4:25.3.1'
-    compile 'com.android.support:recyclerview-v7:25.3.1'
-    compile 'com.android.support:appcompat-v7:25.3.1'
+    compile 'com.android.support:support-v4:26.1.0'
+    compile 'com.android.support:recyclerview-v7:26.1.0'
+    compile 'com.android.support:appcompat-v7:26.1.0'
     compile 'io.reactivex:rxjava:1.0.14'
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 }

@@ -33,7 +33,7 @@ public interface SectionExtraCellInterface extends SectionCellInterface {
     View onCreateHeaderView(ViewGroup parent, int viewType);
 
     //当headercell被更新时调用
-    void updateHeaderView(View view, int sectionPostion, ViewGroup parent);
+    void updateHeaderView(View view, int section, ViewGroup parent);
 
     //是否显示该section的footercell的下分割线
     boolean hasBottomDividerForFooter(int sectionPosition);
@@ -51,6 +51,6 @@ public interface SectionExtraCellInterface extends SectionCellInterface {
     View onCreateFooterView(ViewGroup parent, int viewType);
 
     //当footercell被更新时调用
-    void updateFooterView(View view, int sectionPostion, ViewGroup parent);
+    void updateFooterView(View view, int section, ViewGroup parent);
 
 }

@@ -5,12 +5,16 @@ import android.support.annotation.NonNull;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.dianping.agentsdk.pagecontainer.OnTopViewLayoutChangeListener;
+import com.dianping.agentsdk.pagecontainer.SetMultiTopFunctionInterface;
 import com.dianping.agentsdk.pagecontainer.SetTopParams;
+import com.dianping.agentsdk.pagecontainer.SetTopViewListenerInterface;
 import com.dianping.agentsdk.sectionrecycler.section.MergeSectionDividerAdapter;
 import com.dianping.agentsdk.sectionrecycler.section.PieceAdapter;
 import com.dianping.shield.entity.CellType;
 import com.dianping.shield.feature.ExtraCellTopInterface;
 import com.dianping.shield.feature.ExtraCellTopParamsInterface;
+import com.dianping.shield.feature.OnTopViewLayoutChangeListenerInterface;
 import com.dianping.shield.feature.SetTopInterface;
 import com.dianping.shield.feature.SetTopParamsInterface;
 
@@ -19,9 +23,13 @@ import com.dianping.shield.feature.SetTopParamsInterface;
  */
 
 public class SetTopAdapter extends WrapperPieceAdapter<SetTopInterface> {
+
     private MergeSectionDividerAdapter.BasicHolder emptyTopViewHolder;
     private MergeSectionDividerAdapter.BasicHolder trueTopViewHolder;
+
     protected ExtraCellTopInterface extraCellTopInterface;
+    protected OnTopViewLayoutChangeListenerInterface onTopViewListenerInterface;
+
     private MergeSectionDividerAdapter.BasicHolder emptyTopViewHolderForHeader;
     private MergeSectionDividerAdapter.BasicHolder trueTopViewHolderForHeader;
     private MergeSectionDividerAdapter.BasicHolder emptyTopViewHolderForFooter;
@@ -33,6 +41,18 @@ public class SetTopAdapter extends WrapperPieceAdapter<SetTopInterface> {
 
     public void setExtraCellTopInterface(ExtraCellTopInterface extraCellTopInterface) {
         this.extraCellTopInterface = extraCellTopInterface;
+    }
+
+    public ExtraCellTopInterface getExtraCellTopInterface() {
+        return extraCellTopInterface;
+    }
+
+    public OnTopViewLayoutChangeListenerInterface getOnTopViewListenerInterface() {
+        return onTopViewListenerInterface;
+    }
+
+    public void setOnTopViewListenerInterface(OnTopViewLayoutChangeListenerInterface onTopViewListenerInterface) {
+        this.onTopViewListenerInterface = onTopViewListenerInterface;
     }
 
     @Override
@@ -96,12 +116,30 @@ public class SetTopAdapter extends WrapperPieceAdapter<SetTopInterface> {
                     if (extraCellTopInterface instanceof ExtraCellTopParamsInterface) {
                         params = ((ExtraCellTopParamsInterface) extraCellTopInterface).getHeaderSetTopParams(innerType);
                     }
-                    View emptyView = extraCellTopInterface.getSetHeaderTopFunctionInterface().setTopView(viewHolder.itemView, params);
+
+                    View emptyView = null;
+                    if (extraCellTopInterface.getSetHeaderTopFunctionInterface() instanceof SetMultiTopFunctionInterface
+                            && ((SetMultiTopFunctionInterface) extraCellTopInterface.getSetHeaderTopFunctionInterface()).needMultiStickTop()) {
+                        emptyView = ((SetMultiTopFunctionInterface) extraCellTopInterface.getSetHeaderTopFunctionInterface()).setMultiTopView(extraCellTopInterface, innerType, viewHolder.itemView, params);
+                    } else {
+                        emptyView = extraCellTopInterface.getSetHeaderTopFunctionInterface().setTopView(viewHolder.itemView, params);
+                    }
+
+                    // set top view layout change listener
+                    if (onTopViewListenerInterface != null) {
+                        SetTopViewListenerInterface setTopViewListenerInterface = onTopViewListenerInterface.getSetTopViewListenerInterface();
+                        OnTopViewLayoutChangeListener listener = onTopViewListenerInterface.getOnTopViewLayoutChangeListener(cellType, viewType);
+                        if (setTopViewListenerInterface != null && listener != null) {
+                            setTopViewListenerInterface.setOnTopViewLayoutChangeListener(listener);
+                        }
+                    }
+
                     if (emptyView != null) {
                         emptyTopViewHolderForHeader = new MergeSectionDividerAdapter.BasicHolder(emptyView);
                         trueTopViewHolderForHeader = viewHolder;
                         return emptyTopViewHolderForHeader;
                     }
+
                 }
             } else if (cellType == CellType.FOOTER && extraCellTopInterface != null && extraCellTopInterface.isFooterTopView(innerType)) {
                 MergeSectionDividerAdapter.BasicHolder viewHolder = super.onCreateViewHolder(parent, viewType);
@@ -111,12 +149,28 @@ public class SetTopAdapter extends WrapperPieceAdapter<SetTopInterface> {
                     if (extraCellTopInterface instanceof ExtraCellTopParamsInterface) {
                         params = ((ExtraCellTopParamsInterface) extraCellTopInterface).getFooterSetTopParams(innerType);
                     }
-                    View emptyView = extraCellTopInterface.getSetFooterTopFunctionInterface().setTopView(viewHolder.itemView, params);
+                    View emptyView = null;
+                    if (extraCellTopInterface.getSetFooterTopFunctionInterface() instanceof SetMultiTopFunctionInterface
+                            && ((SetMultiTopFunctionInterface) extraCellTopInterface.getSetFooterTopFunctionInterface()).needMultiStickTop()) {
+                        emptyView = ((SetMultiTopFunctionInterface) extraCellTopInterface.getSetFooterTopFunctionInterface()).setMultiTopView(extraCellTopInterface, innerType, viewHolder.itemView, params);
+                    } else {
+                        emptyView = extraCellTopInterface.getSetFooterTopFunctionInterface().setTopView(viewHolder.itemView, params);
+                    }
+
+                    // set top view layout change listener
+                    if (onTopViewListenerInterface != null) {
+                        SetTopViewListenerInterface setTopViewListenerInterface = onTopViewListenerInterface.getSetTopViewListenerInterface();
+                        OnTopViewLayoutChangeListener listener = onTopViewListenerInterface.getOnTopViewLayoutChangeListener(cellType, viewType);
+                        if (setTopViewListenerInterface != null && listener != null) {
+                            setTopViewListenerInterface.setOnTopViewLayoutChangeListener(listener);
+                        }
+                    }
                     if (emptyView != null) {
                         emptyTopViewHolderForFooter = new MergeSectionDividerAdapter.BasicHolder(emptyView);
                         trueTopViewHolderForFooter = viewHolder;
                         return emptyTopViewHolderForFooter;
                     }
+
                 }
             } else if (cellType == CellType.NORMAL && extraInterface != null && extraInterface.isTopView(innerType)) {
                 MergeSectionDividerAdapter.BasicHolder viewHolder = super.onCreateViewHolder(parent, viewType);
@@ -125,12 +179,27 @@ public class SetTopAdapter extends WrapperPieceAdapter<SetTopInterface> {
                     if (extraInterface instanceof SetTopParamsInterface) {
                         params = ((SetTopParamsInterface) extraInterface).getSetTopParams(innerType);
                     }
-                    View emptyView = extraInterface.getSetTopFunctionInterface().setTopView(viewHolder.itemView, params);
+                    View emptyView = null;
+                    if (extraInterface.getSetTopFunctionInterface() instanceof SetMultiTopFunctionInterface
+                            && ((SetMultiTopFunctionInterface) extraInterface.getSetTopFunctionInterface()).needMultiStickTop()) {
+                        emptyView = ((SetMultiTopFunctionInterface) extraInterface.getSetTopFunctionInterface()).setMultiTopView(extraInterface, innerType, viewHolder.itemView, params);
+                    } else {
+                        emptyView = extraInterface.getSetTopFunctionInterface().setTopView(viewHolder.itemView, params);
+                    }
+                    // set top view layout change listener
+                    if (onTopViewListenerInterface != null) {
+                        SetTopViewListenerInterface setTopViewListenerInterface = onTopViewListenerInterface.getSetTopViewListenerInterface();
+                        OnTopViewLayoutChangeListener listener = onTopViewListenerInterface.getOnTopViewLayoutChangeListener(cellType, viewType);
+                        if (setTopViewListenerInterface != null && listener != null) {
+                            setTopViewListenerInterface.setOnTopViewLayoutChangeListener(listener);
+                        }
+                    }
                     if (emptyView != null) {
                         emptyTopViewHolder = new MergeSectionDividerAdapter.BasicHolder(emptyView);
                         trueTopViewHolder = viewHolder;
                         return emptyTopViewHolder;
                     }
+
                 }
             }
 

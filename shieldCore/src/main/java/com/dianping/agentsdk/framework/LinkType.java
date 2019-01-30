@@ -25,6 +25,8 @@ public class LinkType {
         //与后一个section连接
         LINK_TO_NEXT,
         //禁止后一个section与我连接
-        DISABLE_LINK_TO_NEXT
+        DISABLE_LINK_TO_NEXT,
+        //Internal Use Only
+        LINK_UNSAFE_BETWEEN_GROUP
     }
 }

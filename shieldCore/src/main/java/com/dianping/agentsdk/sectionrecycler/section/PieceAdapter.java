@@ -8,18 +8,22 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Pair;
 
 import com.dianping.agentsdk.framework.AgentInterface;
+import com.dianping.agentsdk.framework.DividerInfo;
 import com.dianping.agentsdk.framework.LinkType;
 import com.dianping.agentsdk.framework.SectionCellInterface;
+import com.dianping.shield.adapter.TopInfoListProvider;
+import com.dianping.shield.adapter.TopPositionAdapter;
 import com.dianping.shield.entity.CellType;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 
 /**
  * Created by runqi.wei
  * 18:54
  * 21.06.2016.
  */
-public abstract class PieceAdapter extends SectionDAdapter<MergeSectionDividerAdapter.BasicHolder> {
+public abstract class PieceAdapter extends SectionDAdapter<MergeSectionDividerAdapter.BasicHolder> implements TopInfoListProvider {
 
     protected String mappingKey = "";
     protected String hostName = "";
@@ -113,14 +117,29 @@ public abstract class PieceAdapter extends SectionDAdapter<MergeSectionDividerAd
         return 0;
     }
 
+
+    public String getSectionTitle(int section) {
+        return null;
+    }
+
     @Override
     public float getSectionHeaderHeight(int section) {
         return NO_SPACE_HIGHT;
     }
 
     @Override
+    public Drawable getSectionHeaderDrawable(int section) {
+        return null;
+    }
+
+    @Override
     public float getSectionFooterHeight(int section) {
         return NO_SPACE_HIGHT;
+    }
+
+    @Override
+    public Drawable getSectionFooterDrawable(int section) {
+        return null;
     }
 
     @Override
@@ -163,6 +182,11 @@ public abstract class PieceAdapter extends SectionDAdapter<MergeSectionDividerAd
         return true;
     }
 
+    @Override
+    public DividerInfo getDividerInfo(int section, int row) {
+        return null;
+    }
+
     public int getInnerType(int wrappedType) {
         return wrappedType;
     }
@@ -183,6 +207,7 @@ public abstract class PieceAdapter extends SectionDAdapter<MergeSectionDividerAd
         return true;
     }
 
+    @Deprecated
     public int getTotalItemCount() {
         int count = 0;
         int sectionCount = getSectionCount();
@@ -190,6 +215,11 @@ public abstract class PieceAdapter extends SectionDAdapter<MergeSectionDividerAd
             count += getRowCount(i);
         }
         return count;
+    }
+
+    @Override
+    public ArrayList<TopPositionAdapter.TopInfo> getTopInfoList() {
+        return null;
     }
 
     public void onAdapterChanged() {
@@ -206,7 +236,7 @@ public abstract class PieceAdapter extends SectionDAdapter<MergeSectionDividerAd
 
     public void onAdapterItemRangeRemoved(int positionStart, int itemCount) {
     }
-    
+
     public void onAdapterItemRangeMoved(int fromPosition, int toPosition, int itemCount) {
     }
 

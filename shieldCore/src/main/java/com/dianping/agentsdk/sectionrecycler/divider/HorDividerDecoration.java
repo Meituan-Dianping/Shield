@@ -6,6 +6,9 @@ import android.graphics.drawable.Drawable;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 
+import com.dianping.shield.layoutmanager.CoveredYInterface;
+import com.dianping.shield.sectionrecycler.ShieldRecyclerViewInterface;
+
 /**
  * <p>
  * 为 {@link RecyclerView}绘制分隔线的 {@link RecyclerView.ItemDecoration}
@@ -23,6 +26,9 @@ public class HorDividerDecoration extends RecyclerView.ItemDecoration {
 
     protected HorDividerCreator dividerCreator;
     private boolean hasBottomFooterDivider = true;
+    private boolean hasTopHeaderDivider = false;
+
+    protected CoveredYInterface coveredYInterface;
 
     /**
      * <p><strong>Constractor</strong></p>
@@ -35,25 +41,34 @@ public class HorDividerDecoration extends RecyclerView.ItemDecoration {
         this.dividerCreator = dividerCreator;
     }
 
+    public void setCoveredYInterface(CoveredYInterface coveredYInterface) {
+        this.coveredYInterface = coveredYInterface;
+    }
+
     public void setBottomFooterDivider(boolean hasBottomFooterDivider) {
         this.hasBottomFooterDivider = hasBottomFooterDivider;
     }
 
+    public void setTopHeaderDivider(boolean hasTopHeaderDivider) {
+        this.hasTopHeaderDivider = hasTopHeaderDivider;
+    }
+
+
     @Override
     public void getItemOffsets(Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
         super.getItemOffsets(outRect, view, parent, state);
-        if (dividerCreator == null) {
+        if (dividerCreator == null || parent == null) {
             return;
         }
 
-        int childPosition = parent.getChildAdapterPosition(view);
+        int childPosition;
 
-        // 为 dianping 的 PullToRefreshRecyclerView 提供兼容，
-        // 考虑到其中添加的一个 header view，调整相应的position
-        RecyclerView.Adapter adapter = parent.getAdapter();
-        if ("HeaderViewRecyclerAdapter".equals(adapter.getClass().getSimpleName())) {
-            childPosition--;
+        if(parent instanceof ShieldRecyclerViewInterface){
+            childPosition = ((ShieldRecyclerViewInterface) parent).getShieldChildAdapterPosition(view);
+        }else {
+            childPosition = parent.getChildAdapterPosition(view);
         }
+
 
         // 计算 Item 上方的间隔
         float headerHeight = dividerCreator.getHeaderHeight(childPosition);
@@ -65,10 +80,13 @@ public class HorDividerDecoration extends RecyclerView.ItemDecoration {
         float footerHeight = dividerCreator.getFooterHeight(childPosition);
         if (footerHeight > 0) {
             float bottomHeight = footerHeight;
-            int lastPosition = parent.getAdapter().getItemCount() - 1;
-            if ("HeaderViewRecyclerAdapter".equals(adapter.getClass().getSimpleName())) {
-                lastPosition--;
+            int lastPosition;
+            if(parent instanceof ShieldRecyclerViewInterface){
+                lastPosition = ((ShieldRecyclerViewInterface) parent).getShieldAdapterItemCount() - 1;
+            }else {
+                lastPosition = parent.getAdapter().getItemCount() - 1;
             }
+
             if (parent.getChildCount() > 0 && lastPosition == childPosition && !hasBottomFooterDivider) {
                 bottomHeight = 0;
             }
@@ -96,8 +114,13 @@ public class HorDividerDecoration extends RecyclerView.ItemDecoration {
     @Override
     public void onDrawOver(Canvas c, RecyclerView parent, RecyclerView.State state) {
         super.onDrawOver(c, parent, state);
-        if (dividerCreator == null) {
+        if (dividerCreator == null || parent == null) {
             return;
+        }
+
+        int coveredY = 0;
+        if (coveredYInterface != null) {
+            coveredY = coveredYInterface.getCoveredY();
         }
 
         int left = parent.getPaddingLeft();
@@ -106,13 +129,63 @@ public class HorDividerDecoration extends RecyclerView.ItemDecoration {
         int childCount = parent.getChildCount();
         for (int i = 0; i < childCount; i++) {
             View child = parent.getChildAt(i);
-            int childPosition = parent.getChildAdapterPosition(child);
-            RecyclerView.Adapter adapter = parent.getAdapter();
-            if ("HeaderViewRecyclerAdapter".equals(adapter.getClass().getSimpleName())) {
-                childPosition--;
+            int childPosition;
+            if(parent instanceof ShieldRecyclerViewInterface){
+                childPosition = ((ShieldRecyclerViewInterface) parent).getShieldChildAdapterPosition(child);
+            }else {
+                childPosition = parent.getChildAdapterPosition(child);
             }
 
             RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) child.getLayoutParams();
+
+            // draw header drawable in header gap
+            Drawable headerDrawable = dividerCreator.getHeaderDrawable(childPosition);
+            int headerHeight = (int) dividerCreator.getHeaderHeight(childPosition);
+            if (headerDrawable != null && headerHeight > 0) {
+                int headerDrawableHeight = headerDrawable.getIntrinsicHeight();
+                if (headerDrawableHeight < 0) {
+                    headerDrawableHeight = headerHeight;
+                }
+                int headerDrawableWidth = Math.max(0, headerDrawable.getIntrinsicWidth());
+                int headerBottom = (int) child.getY();
+                int headerTop = headerBottom - Math.min(headerDrawableHeight, headerHeight);
+                int headerLeft = left;
+                int headerRight = right;
+                if (headerDrawableWidth > 0) {
+                    headerRight = left + headerDrawableWidth;
+                }
+
+                headerTop = Math.max(headerTop, coveredY);
+                if (headerTop <= headerBottom) {
+                    Rect headerBounds = new Rect(headerLeft, headerTop, headerRight, headerBottom);
+                    headerDrawable.setBounds(headerBounds);
+                    headerDrawable.setAlpha((int) (255 * child.getAlpha()));
+                    headerDrawable.draw(c);
+                }
+            }
+
+            // draw footer drawable in header gap
+            Drawable footerDrawable = dividerCreator.getFooterDrawable(childPosition);
+            int footerHeight = (int) dividerCreator.getFooterHeight(childPosition);
+
+            if (footerDrawable != null && footerHeight > 0) {
+                int footerDrawableHeight = footerDrawable.getIntrinsicHeight();
+                if (footerDrawableHeight < 0) {
+                    footerDrawableHeight = footerHeight;
+                }
+                int footerTop = (int) (child.getBottom() + child.getTranslationY());
+                int footerBottom = footerTop + Math.min(footerHeight, footerDrawableHeight);
+                int footerLeft = left;
+                int footerRight = right;
+
+                footerTop = Math.max(footerTop, coveredY);
+                if (footerTop <= footerBottom) {
+                    Rect footerBounds = new Rect(footerLeft, footerTop, footerRight, footerBottom);
+                    footerDrawable.setBounds(footerBounds);
+                    footerDrawable.setAlpha((int) (255 * child.getAlpha()));
+                    footerDrawable.draw(c);
+                }
+            }
 
             // draw top divider
             Drawable topDivider = dividerCreator.getTopDivider(childPosition);
@@ -139,19 +212,27 @@ public class HorDividerDecoration extends RecyclerView.ItemDecoration {
                 // | ------------------- |- Item Bottom
                 // |---------------------|- Margin Bottom
                 //
+                int topDividerHeight = topDivider.getIntrinsicHeight();
+                if (topDividerHeight < 0) {
+                    topDividerHeight = 1;
+                }
                 if (dividerCreator.hasTopDividerVerticalOffset(childPosition)) {
-                    topTop = child.getTop() - params.topMargin - topDivider.getIntrinsicHeight();
-                    topBottom = child.getTop() - params.topMargin;
+                    topTop = (int) child.getY() - params.topMargin - topDividerHeight;
+                    topBottom = (int) child.getY() - params.topMargin;
                 } else {
-                    topTop = child.getTop() - params.topMargin;
-                    topBottom = child.getTop() - params.topMargin + topDivider.getIntrinsicHeight();
+                    topTop = (int) child.getY() - params.topMargin;
+                    topBottom = (int) child.getY() - params.topMargin + topDividerHeight;
                 }
 
                 Rect topBounds = new Rect(topleft, topTop, topRight, topBottom);
                 Rect topBoundsPadding = dividerCreator.topDividerOffset(childPosition);
-                topDivider.setBounds(insetInside(topBounds, topBoundsPadding));
-//                topDivider.setBounds(topleft, topTop, topRight, topBottom);
-                topDivider.draw(c);
+                Rect insetTopBounds = insetInside(topBounds, topBoundsPadding);
+                insetTopBounds.top = Math.max(insetTopBounds.top, coveredY);
+                if (insetTopBounds.top <= insetTopBounds.bottom) {
+                    topDivider.setBounds(insetTopBounds);
+                    topDivider.setAlpha((int) (255 * child.getAlpha()));
+                    topDivider.draw(c);
+                }
             }
 
             // draw bottom divider
@@ -179,18 +260,27 @@ public class HorDividerDecoration extends RecyclerView.ItemDecoration {
                 // |---------------------|- Bottom Divider
                 // |---------------------|- Margin Bottom
                 //
+                int bottomDividerHeight = bottomDivider.getIntrinsicHeight();
+                if (bottomDividerHeight < 0) {
+                    bottomDividerHeight = 1;
+                }
                 if (dividerCreator.hasBottomDividerVerticalOffset(childPosition)) {
-                    bottomTop = child.getBottom() + params.bottomMargin;
-                    bottomBottom = child.getBottom() + params.bottomMargin + bottomDivider.getIntrinsicHeight();
+                    bottomTop = (int) child.getTranslationY() + child.getBottom() + params.bottomMargin;
+                    bottomBottom = (int) child.getTranslationY() + child.getBottom() + params.bottomMargin + bottomDividerHeight;
                 } else {
-                    bottomTop = child.getBottom() + params.bottomMargin - bottomDivider.getIntrinsicHeight();
-                    bottomBottom = child.getBottom() + params.bottomMargin;
+                    bottomTop = (int) child.getTranslationY() + child.getBottom() + params.bottomMargin - bottomDividerHeight;
+                    bottomBottom = (int) child.getTranslationY() + child.getBottom() + params.bottomMargin;
                 }
 
                 Rect bottomBounds = new Rect(bottomleft, bottomTop, bottomRight, bottomBottom);
                 Rect bottomBoundsPadding = dividerCreator.bottomDividerOffset(childPosition);
-                bottomDivider.setBounds(insetInside(bottomBounds, bottomBoundsPadding));
-                bottomDivider.draw(c);
+                Rect insetBottomBounds = insetInside(bottomBounds, bottomBoundsPadding);
+                insetBottomBounds.top = Math.max(insetBottomBounds.top, coveredY);
+                if (insetBottomBounds.top <= insetBottomBounds.bottom) {
+                    bottomDivider.setBounds(insetBottomBounds);
+                    bottomDivider.setAlpha((int) (255 * child.getAlpha()));
+                    bottomDivider.draw(c);
+                }
             }
 
         }
