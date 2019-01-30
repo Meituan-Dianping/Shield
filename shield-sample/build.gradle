@@ -1,13 +1,24 @@
-apply plugin: 'com.android.application'
+buildscript {
+    ext.kotlin_version = '1.2.41'
+    repositories {
+        jcenter()
+    }
 
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
 android {
-    compileSdkVersion 25
-    buildToolsVersion "26.0.2"
+    compileSdkVersion 26
+    buildToolsVersion "27.0.3"
 
     defaultConfig {
         applicationId "com.example.shielddemo"
         minSdkVersion 16
-        targetSdkVersion 25
+        targetSdkVersion 26
         versionCode 1
         versionName "1.0"
 
@@ -29,7 +40,8 @@ dependencies {
     })
     compile project(':shieldCore')
 //    compile 'com.dianping.android.sdk:shieldCore:1.6.0'
-    compile 'com.android.support:appcompat-v7:25.3.1'
+    compile 'com.android.support:appcompat-v7:26.1.0'
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
     testCompile 'junit:junit:4.12'
 }

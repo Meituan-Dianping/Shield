@@ -22,6 +22,8 @@ public interface HorDividerCreator {
      */
     float getHeaderHeight(int position);
 
+    Drawable getHeaderDrawable(int position);
+
     /**
      * 返回需要在 Item 下面预留的高度
      * 不包含为分隔线和 Margin 留下的高度
@@ -29,6 +31,8 @@ public interface HorDividerCreator {
      * @return float 需要在 Item 下面留下的高度
      */
     float getFooterHeight(int position);
+
+    Drawable getFooterDrawable(int position);
 
     /**
      * 返回是否需要为 Item 顶部的分隔线留下高度

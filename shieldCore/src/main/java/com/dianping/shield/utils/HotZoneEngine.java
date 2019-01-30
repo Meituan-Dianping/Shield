@@ -1,7 +1,6 @@
 package com.dianping.shield.utils;
 
 import android.graphics.Rect;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Pair;
 import android.view.View;
@@ -12,6 +11,8 @@ import com.dianping.shield.entity.HotZoneYRange;
 import com.dianping.shield.entity.ScrollDirection;
 import com.dianping.shield.feature.HotZoneObserverInterface;
 import com.dianping.shield.manager.LightAgentManager;
+import com.dianping.shield.sectionrecycler.ShieldLayoutManagerInterface;
+import com.dianping.shield.sectionrecycler.ShieldRecyclerViewInterface;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -50,60 +51,37 @@ public class HotZoneEngine {
 
     public void scroll(ScrollDirection scrollDirection, RecyclerView recyclerView, MergeSectionDividerAdapter mergeRecyclerAdapter) {
         if (mergeRecyclerAdapter == null || scrollDirection == null
-                || !(recyclerView.getLayoutManager() instanceof LinearLayoutManager)
-                || hotZoneObserverInterface == null) {
+                || !(recyclerView.getLayoutManager() instanceof ShieldLayoutManagerInterface)
+                || hotZoneObserverInterface == null || (recyclerView == null)) {
             return;
         }
 
-        LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
-        int firstPosition = layoutManager.findFirstVisibleItemPosition();
-        int lastPostion = layoutManager.findLastVisibleItemPosition();
-        // 为 dianping 的 PullToRefreshRecyclerView 提供兼容，
-        // 考虑到其中添加的一个 header view，调整相应的position
-        boolean hasExtraHeader = false;
-        if (recyclerView != null && recyclerView.getAdapter() != null) {
-            RecyclerView.Adapter adapter = recyclerView.getAdapter();
-            hasExtraHeader = "HeaderViewRecyclerAdapter".equals(adapter.getClass().getSimpleName());
+        hotZoneYRange = hotZoneObserverInterface.defineHotZone();
+
+        ShieldLayoutManagerInterface layoutManager = (ShieldLayoutManagerInterface) recyclerView.getLayoutManager();
+        int firstPosition = layoutManager.findFirstVisibleItemPosition(false);
+        int lastPostion = layoutManager.findLastVisibleItemPosition(false);
+
+        MergeSectionDividerAdapter.DetailSectionPositionInfo firstSectionInfo = null;
+        MergeSectionDividerAdapter.DetailSectionPositionInfo lastSectionInfo = null;
+        Pair<Integer, Integer> temFirstSectionInfo = mergeRecyclerAdapter.getSectionIndex(firstPosition);
+        if (temFirstSectionInfo != null) {
+            firstSectionInfo = mergeRecyclerAdapter.getDetailSectionPositionInfo(temFirstSectionInfo.first, temFirstSectionInfo.second);
         }
-
-        if (hasExtraHeader) {
-            firstPosition--;
-            lastPostion--;
+        Pair<Integer, Integer> temLastSectionInfo = mergeRecyclerAdapter.getSectionIndex(lastPostion);
+        if (temLastSectionInfo != null) {
+            lastSectionInfo = mergeRecyclerAdapter.getDetailSectionPositionInfo(temLastSectionInfo.first, temLastSectionInfo.second);
         }
-
-
-        if (scrollDirection == ScrollDirection.UP) {
-            Pair<Integer, Integer> temSectionInfo = mergeRecyclerAdapter.getSectionIndex(firstPosition);
-            if (temSectionInfo != null) {
-                MergeSectionDividerAdapter.DetailSectionPositionInfo sectionInfo
-                        = mergeRecyclerAdapter.getDetailSectionPositionInfo(temSectionInfo.first, temSectionInfo.second);
-                if (sectionInfo != null) {
-                    HashMap<Integer, PieceAdapter> tempMap = (HashMap<Integer, PieceAdapter>) adaptersMap.clone();
-                    for (Map.Entry<Integer, PieceAdapter> entry : tempMap.entrySet()) {
-                        if (entry.getKey() < sectionInfo.adapterIndex) {
-                            hotZoneObserverInterface.scrollOut(adaptersMap.get(entry.getKey()).getAgentInterface().getHostName(), scrollDirection);
-                            adaptersMap.remove(entry.getKey());
-                        }
-                    }
-                }
-            }
-        } else if (scrollDirection == ScrollDirection.DOWN) {
-            Pair<Integer, Integer> temSectionInfo = mergeRecyclerAdapter.getSectionIndex(lastPostion);
-            if (temSectionInfo != null) {
-                MergeSectionDividerAdapter.DetailSectionPositionInfo sectionInfo
-                        = mergeRecyclerAdapter.getDetailSectionPositionInfo(temSectionInfo.first, temSectionInfo.second);
-                if (sectionInfo != null) {
-                    HashMap<Integer, PieceAdapter> tempMap = (HashMap<Integer, PieceAdapter>) adaptersMap.clone();
-                    for (Map.Entry<Integer, PieceAdapter> entry : tempMap.entrySet()) {
-                        if (entry.getKey() > sectionInfo.adapterIndex) {
-                            hotZoneObserverInterface.scrollOut(adaptersMap.get(entry.getKey()).getAgentInterface().getHostName(), scrollDirection);
-                            adaptersMap.remove(entry.getKey());
-                        }
-                    }
+        if (firstSectionInfo != null || lastSectionInfo != null) {
+            HashMap<Integer, PieceAdapter> tempMap = (HashMap<Integer, PieceAdapter>) adaptersMap.clone();
+            for (Map.Entry<Integer, PieceAdapter> entry : tempMap.entrySet()) {
+                if ((firstSectionInfo != null && entry.getKey() < firstSectionInfo.adapterIndex)
+                        || (lastSectionInfo != null && entry.getKey() > lastSectionInfo.adapterIndex)) {
+                    hotZoneObserverInterface.scrollOut(adaptersMap.get(entry.getKey()).getAgentInterface().getHostName(), scrollDirection);
+                    adaptersMap.remove(entry.getKey());
                 }
             }
         }
-
 
         for (int i = firstPosition; i <= lastPostion; i++) {
             Pair<Integer, Integer> temSectionInfo = mergeRecyclerAdapter.getSectionIndex(i);
@@ -138,7 +116,12 @@ public class HotZoneEngine {
                 continue;
             }
             View itemView = null;
-            int viewIndex = hasExtraHeader ? i + 1 : i;
+            int viewIndex;
+            if(recyclerView instanceof ShieldRecyclerViewInterface){
+                viewIndex = i + ((ShieldRecyclerViewInterface) recyclerView).getHeaderCount();
+            }else {
+                viewIndex = i;
+            }
             for (int index = 0; index < recyclerView.getChildCount(); index++) {
                 if (recyclerView.getChildAdapterPosition(recyclerView.getChildAt(index)) == viewIndex) {
                     itemView = recyclerView.getChildAt(index);
@@ -149,28 +132,38 @@ public class HotZoneEngine {
 
             Rect itemRect = new Rect();
             itemView.getHitRect(itemRect);
+            //必须分开考虑第一行和最后一行以及滚动方向
             //往上第一个item的top边缘进入热区
             if (isFirstItem(sectionInfo.adapterSectionIndex, sectionInfo.adapterSectionPosition, adapterOwner)
-                    && scrollDirection == ScrollDirection.UP && itemRect.top <= hotZoneYRange.endY
+                    && scrollDirection != ScrollDirection.DOWN && itemRect.top <= hotZoneYRange.endY
                     && itemRect.bottom > hotZoneYRange.startY && (!adaptersMap.containsValue(adapterOwner))) {
                 adaptersMap.put(sectionInfo.adapterIndex, adapterOwner);
                 hotZoneObserverInterface.scrollReach(adapterOwner.getAgentInterface().getHostName(), scrollDirection);
             } else if (isFirstItem(sectionInfo.adapterSectionIndex, sectionInfo.adapterSectionPosition, adapterOwner)
-                    && scrollDirection == ScrollDirection.DOWN && itemRect.top > hotZoneYRange.endY
+                    && scrollDirection != ScrollDirection.UP && itemRect.top > hotZoneYRange.endY
                     && adaptersMap.containsValue(adapterOwner)) {
                 adaptersMap.remove(sectionInfo.adapterIndex);
                 hotZoneObserverInterface.scrollOut(adapterOwner.getAgentInterface().getHostName(), scrollDirection);
             } else if (isLastItem(sectionInfo.adapterSectionIndex, sectionInfo.adapterSectionPosition, adapterOwner)
-                    && scrollDirection == ScrollDirection.UP && itemRect.bottom <= hotZoneYRange.startY
+                    && scrollDirection == ScrollDirection.UP && itemRect.bottom < hotZoneYRange.startY
                     && adaptersMap.containsValue(adapterOwner)) {
                 adaptersMap.remove(sectionInfo.adapterIndex);
                 hotZoneObserverInterface.scrollOut(adapterOwner.getAgentInterface().getHostName(), scrollDirection);
             } else if (isLastItem(sectionInfo.adapterSectionIndex, sectionInfo.adapterSectionPosition, adapterOwner)
-                    && scrollDirection == ScrollDirection.DOWN && itemRect.bottom > hotZoneYRange.startY
+                    && scrollDirection == ScrollDirection.DOWN && itemRect.bottom >= hotZoneYRange.startY
                     && itemRect.top < hotZoneYRange.endY && (!adaptersMap.containsValue(adapterOwner))) {
                 adaptersMap.put(sectionInfo.adapterIndex, adapterOwner);
                 hotZoneObserverInterface.scrollReach(adapterOwner.getAgentInterface().getHostName(), scrollDirection);
             }
+
+//            if (itemRect.top <= hotZoneYRange.endY && itemRect.bottom >= hotZoneYRange.startY && (!adaptersMap.containsValue(adapterOwner))) {
+//                adaptersMap.put(sectionInfo.adapterIndex, adapterOwner);
+//                hotZoneObserverInterface.scrollReach(adapterOwner.getAgentInterface().getHostName(), scrollDirection);
+//            } else if ((itemRect.top > hotZoneYRange.endY || itemRect.bottom < hotZoneYRange.startY) && adaptersMap.containsValue(adapterOwner)) {
+//                adaptersMap.remove(sectionInfo.adapterIndex);
+//                hotZoneObserverInterface.scrollOut(adapterOwner.getAgentInterface().getHostName(), scrollDirection);
+//            }
+
         }
 //        Log.e("HotZone", "ScrollEnd:" + (System.currentTimeMillis() - time));
     }

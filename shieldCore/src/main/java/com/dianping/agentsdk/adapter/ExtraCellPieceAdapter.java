@@ -7,9 +7,11 @@ import android.support.annotation.NonNull;
 import android.util.Pair;
 import android.view.ViewGroup;
 
+import com.dianping.agentsdk.framework.DividerInfo;
 import com.dianping.agentsdk.framework.SectionExtraCellDividerOffsetInterface;
 import com.dianping.agentsdk.framework.SectionExtraCellInterface;
 import com.dianping.agentsdk.framework.SectionExtraTopDividerCellInterface;
+import com.dianping.agentsdk.sectionrecycler.divider.DividerInfoInterface;
 import com.dianping.agentsdk.sectionrecycler.section.MergeSectionDividerAdapter;
 import com.dianping.agentsdk.sectionrecycler.section.PieceAdapter;
 import com.dianping.shield.entity.CellType;
@@ -23,6 +25,7 @@ public class ExtraCellPieceAdapter extends WrapperPieceAdapter<SectionExtraCellI
 
     protected SectionExtraTopDividerCellInterface extraTopDividerCellInterface;
     protected SectionExtraCellDividerOffsetInterface extraCellDividerOffsetInterface;
+    protected DividerInfoInterface dividerInfoInterfaceForExtraCell;
 
     public ExtraCellPieceAdapter(@NonNull Context context, PieceAdapter adapter, SectionExtraCellInterface sectionExtraCellInterface) {
         super(context, adapter, sectionExtraCellInterface);
@@ -34,6 +37,10 @@ public class ExtraCellPieceAdapter extends WrapperPieceAdapter<SectionExtraCellI
 
     public void setExtraCellDividerOffsetInterface(SectionExtraCellDividerOffsetInterface extraCellDividerOffsetInterface) {
         this.extraCellDividerOffsetInterface = extraCellDividerOffsetInterface;
+    }
+
+    public void setDividerInfoInterfaceForExtraCell(DividerInfoInterface dividerInfoInterfaceForExtraCell) {
+        this.dividerInfoInterfaceForExtraCell = dividerInfoInterfaceForExtraCell;
     }
 
     @Override
@@ -164,7 +171,7 @@ public class ExtraCellPieceAdapter extends WrapperPieceAdapter<SectionExtraCellI
             if (extraInterface.hasHeaderForSection(wrappedSection)) {
                 if (wrappedRow == 0) {
                     //返回的section和row要标识出header
-                    return new Pair<Integer, Integer>(wrappedSection, 0);
+                    return new Pair<Integer, Integer>(wrappedSection, -1);
                 } else {
                     innerRow--;
                 }
@@ -172,7 +179,7 @@ public class ExtraCellPieceAdapter extends WrapperPieceAdapter<SectionExtraCellI
             if (extraInterface.hasFooterForSection(wrappedSection)) {
                 if (wrappedRow == getRowCount(wrappedSection) - 1) {
                     //返回的section和row要标识出footer
-                    return new Pair<Integer, Integer>(wrappedSection, wrappedRow);
+                    return new Pair<Integer, Integer>(wrappedSection, -2);
                 }
             }
         }
@@ -193,8 +200,7 @@ public class ExtraCellPieceAdapter extends WrapperPieceAdapter<SectionExtraCellI
                 return extraInterface.hasTopDividerForHeader(pair.first);
             }
             if (cellType == CellType.FOOTER) {
-                //最后一行转到footer,footer没有topdivider
-                return false;
+                return true;
             }
         }
         return super.showTopDivider(pair.first, pair.second);
@@ -330,15 +336,15 @@ public class ExtraCellPieceAdapter extends WrapperPieceAdapter<SectionExtraCellI
 
             CellType cellType = getCellType(section, row);
             if (cellType == CellType.HEADER) {
-                return 0;
+                return section * 2;
             }
             if (cellType == CellType.FOOTER) {
-                return 1;
+                return section * 2 + 1;
             }
 
         }
 
-        return super.getItemId(pair.first, pair.second) + 2;
+        return super.getItemId(pair.first, pair.second) + getSectionCount() * 2;
     }
 
     @Override
@@ -416,6 +422,18 @@ public class ExtraCellPieceAdapter extends WrapperPieceAdapter<SectionExtraCellI
         }
 
         return super.hasTopDividerVerticalOffset(pair.first, pair.second);
+    }
+
+    @Override
+    public DividerInfo getDividerInfo(int section, int row) {
+        Pair<Integer, Integer> pair = getInnerPosition(section, row);
+        if (dividerInfoInterfaceForExtraCell != null) {
+            CellType cellType = getCellType(section, row);
+            if (cellType == CellType.HEADER || cellType == CellType.FOOTER) {
+                return dividerInfoInterfaceForExtraCell.getDividerInfo(cellType, pair.first, pair.second);
+            }
+        }
+        return super.getDividerInfo(pair.first, pair.second);
     }
 
     /** 对所有涉及到row的被包装方法进行row还原 end */

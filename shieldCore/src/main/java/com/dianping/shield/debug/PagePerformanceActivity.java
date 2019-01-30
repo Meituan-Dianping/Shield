@@ -35,8 +35,11 @@ public class PagePerformanceActivity extends AppCompatActivity {
         }
 
         if (getIntent() != null && getIntent().getExtras() != null) {
-            Bundle extras = getIntent().getExtras();
-            pageName = extras.getString("pagename");
+            try {
+                Bundle extras = getIntent().getExtras();
+                pageName = extras.getString("pagename");
+            } catch (Exception e) {
+            }
         }
 
         manager = new PerformanceManager(getBaseContext());

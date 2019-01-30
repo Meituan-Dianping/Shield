@@ -10,6 +10,8 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 
+import com.dianping.shield.sectionrecycler.ShieldRecyclerViewInterface;
+
 import java.util.ArrayList;
 
 
@@ -36,13 +38,14 @@ public class GroupBorderDecoration extends RecyclerView.ItemDecoration {
     private TextPaint textPaint;
     private Paint textBgPaint;
 
-    private GroupInfoPrivider groupInfoPrivider;
+    private GroupInfoProvider groupInfoProvider;
     private ArrayList<String> textLineList = new ArrayList<>();
     private String textLine = "";
     private Rect bgRect = new Rect();
 
-    public GroupBorderDecoration(GroupInfoPrivider groupInfoPrivider) {
-        this.groupInfoPrivider = groupInfoPrivider;
+
+    public GroupBorderDecoration(GroupInfoProvider groupInfoProvider) {
+        this.groupInfoProvider = groupInfoProvider;
 
         linePaint = new Paint();
         linePaint.setColor(Color.GREEN);
@@ -65,7 +68,7 @@ public class GroupBorderDecoration extends RecyclerView.ItemDecoration {
     @Override
     public void onDrawOver(Canvas c, RecyclerView parent, RecyclerView.State state) {
         super.onDrawOver(c, parent, state);
-        if (groupInfoPrivider == null || parent == null) {
+        if (groupInfoProvider == null || parent == null) {
             return;
         }
 
@@ -76,10 +79,11 @@ public class GroupBorderDecoration extends RecyclerView.ItemDecoration {
         Log.v("rect start end", "start is " + start + " and end is " + end);
         for (int i = 0; i < childCount; i++) {
             View childView = parent.getChildAt(i);
-            int childPosition = parent.getChildAdapterPosition(childView);
-            RecyclerView.Adapter adapter = parent.getAdapter();
-            if ("HeaderViewRecyclerAdapter".equals(adapter.getClass().getSimpleName())) {
-                childPosition--;
+            int childPosition;
+            if (parent instanceof ShieldRecyclerViewInterface) {
+                childPosition = ((ShieldRecyclerViewInterface) parent).getShieldChildAdapterPosition(childView);
+            } else {
+                childPosition = parent.getChildAdapterPosition(childView);
             }
             drawBorderLine(c, childView, childPosition, parent, childPosition == 0, childPosition == parent.getAdapter().getItemCount() - 1);
         }
@@ -134,7 +138,7 @@ public class GroupBorderDecoration extends RecyclerView.ItemDecoration {
             c.drawLine(drawRect.right, drawRect.top, drawRect.right, drawRect.top + CORNER_WIDTH, cornerPaint);
 
             // Text
-            String text = groupInfoPrivider.getGroupText(viewPosition);
+            String text = groupInfoProvider.getGroupText(viewPosition);
             if (!TextUtils.isEmpty(text)) {
 
                 Paint.FontMetrics fontMetrics = new Paint.FontMetrics();
@@ -207,11 +211,11 @@ public class GroupBorderDecoration extends RecyclerView.ItemDecoration {
 
         int previousPosition = position - 1;
 
-        if (groupInfoPrivider != null) {
-            int previousGroup = groupInfoPrivider.getGroupPosition(previousPosition);
-            int group = groupInfoPrivider.getGroupPosition(position);
-            if (group != GroupInfoPrivider.NO_GROUP
-                    && previousGroup != GroupInfoPrivider.NO_GROUP
+        if (groupInfoProvider != null) {
+            int previousGroup = groupInfoProvider.getGroupPosition(previousPosition);
+            int group = groupInfoProvider.getGroupPosition(position);
+            if (group != GroupInfoProvider.NO_GROUP
+                    && previousGroup != GroupInfoProvider.NO_GROUP
                     && group != previousGroup) {
                 return true;
             }
@@ -231,9 +235,9 @@ public class GroupBorderDecoration extends RecyclerView.ItemDecoration {
 
         int nextPosition = position + 1;
 
-        if (groupInfoPrivider != null) {
-            int nextGroup = groupInfoPrivider.getGroupPosition(nextPosition);
-            int group = groupInfoPrivider.getGroupPosition(position);
+        if (groupInfoProvider != null) {
+            int nextGroup = groupInfoProvider.getGroupPosition(nextPosition);
+            int group = groupInfoProvider.getGroupPosition(position);
             if (group != nextGroup) {
                 return true;
             }
@@ -242,7 +246,7 @@ public class GroupBorderDecoration extends RecyclerView.ItemDecoration {
         return false;
     }
 
-    public interface GroupInfoPrivider {
+    public interface GroupInfoProvider {
         int NO_GROUP = -1;
 
         int getGroupPosition(int position);

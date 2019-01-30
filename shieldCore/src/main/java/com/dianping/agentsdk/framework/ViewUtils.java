@@ -11,6 +11,8 @@ import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.dianping.shield.env.ShieldEnvironment;
+
 public class ViewUtils {
 
     private static int screenWidthPixels;
@@ -164,6 +166,9 @@ public class ViewUtils {
      * @return
      */
     public static int getScreenWidthPixels(Context context) {
+        if (ShieldEnvironment.INSTANCE.getPageWidth() > -1) {
+            return ShieldEnvironment.INSTANCE.getPageWidth();
+        }
 
         if (context == null) {
             return 0;
@@ -184,6 +189,10 @@ public class ViewUtils {
      * @return
      */
     public static int getScreenHeightPixels(Context context) {
+        if (ShieldEnvironment.INSTANCE.getPageHeight() > -1) {
+            return ShieldEnvironment.INSTANCE.getPageHeight();
+        }
+
         if (context == null) {
             return 0;
         }

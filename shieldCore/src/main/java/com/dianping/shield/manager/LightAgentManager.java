@@ -16,9 +16,12 @@ import com.dianping.agentsdk.framework.AgentListConfig;
 import com.dianping.agentsdk.framework.AgentManagerInterface;
 import com.dianping.agentsdk.framework.DriverInterface;
 import com.dianping.agentsdk.framework.PageContainerInterface;
+import com.dianping.shield.bridge.ShieldLogger;
+import com.dianping.shield.env.ShieldEnvironment;
 import com.dianping.shield.framework.FullOptionMenuLifecycle;
 import com.dianping.shield.framework.OptionMenuLifecycle;
 import com.dianping.shield.framework.ShieldContainerInterface;
+import com.dianping.shield.framework.ShieldLifeCycler;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,13 +32,20 @@ import java.util.Map;
  * Created by hezhi on 16/3/3.
  */
 public class LightAgentManager implements AgentManagerInterface {
-    public final static String AGENT_SEPARATE = "/";
+    public final static String AGENT_SEPARATE = "@";
     protected final ArrayList<String> agentList = new ArrayList<String>(); // 排好序的模块key
     protected final HashMap<String, AgentInterface> agents = new HashMap<String, AgentInterface>();//方便快速查找模块
     protected Fragment fragment;
     protected AgentCellBridgeInterface agentCellBridgeInterface;
     protected DriverInterface driverInterface;
     protected PageContainerInterface pageContainer;
+
+    public LightAgentManager(ShieldLifeCycler shieldLifeCycler) {
+        this.fragment = shieldLifeCycler.hostFragment;
+        this.agentCellBridgeInterface = shieldLifeCycler;
+        this.driverInterface = shieldLifeCycler;
+        this.pageContainer = shieldLifeCycler.getPageContainer();
+    }
 
     public LightAgentManager(Fragment fragment, AgentCellBridgeInterface agentCellBridgeInterface,
                              DriverInterface driverInterface, PageContainerInterface pageContainerInterface) {
@@ -47,6 +57,7 @@ public class LightAgentManager implements AgentManagerInterface {
 
     @Override
     public void setupAgents(Bundle savedInstanceState, ArrayList<AgentListConfig> defaultConfig) {
+        ShieldEnvironment.INSTANCE.getShieldLogger().setLevel(ShieldLogger.getVERBOSE());
         setupAgents(defaultConfig);
         ArrayList<AgentInterface> addList = new ArrayList<AgentInterface>();
         for (String name : agentList) {
@@ -58,8 +69,9 @@ public class LightAgentManager implements AgentManagerInterface {
                 addList.add(agent);
             }
         }
-        agentCellBridgeInterface.updateCells(addList, null, null);
-        dispatchCellChanged(fragment.getActivity(), null, null);
+        if (ShieldEnvironment.INSTANCE.isDebug()) {
+            ShieldEnvironment.INSTANCE.getShieldLogger().d("@onCreateAgents@Agents:" + agents.toString());
+        }
     }
 
     private void setupAgents(ArrayList<AgentListConfig> defaultConfig) {
@@ -77,7 +89,8 @@ public class LightAgentManager implements AgentManagerInterface {
     protected void setDefaultAgent(ArrayList<AgentListConfig> defaultConfig, String keyPath, String index) {
         Map<String, AgentInfo> defaultAgent = getDefaultAgentList(defaultConfig);
         if (defaultAgent == null) {
-            Log.e("Shield", "Failed to find a useful config ");
+            ShieldEnvironment.INSTANCE.getShieldLogger().e(
+                    "@ReadShieldConfigError!!@FragmentName:" + fragment.toString() + "&Failed to find a useful config");
             return;
         }
 
@@ -92,6 +105,9 @@ public class LightAgentManager implements AgentManagerInterface {
                 if (!agents.containsKey(key)) {
                     agentList.add(key);
                     AgentInterface cellAgent = constructAgents(entry.getValue());
+                    if (cellAgent != null && entry.getValue() != null && entry.getValue().arguments != null) {
+                        cellAgent.setArguments(entry.getValue().arguments);
+                    }
                     updateIndexInfo(cellAgent, keyPath, index, key, entry);
 
                 } else {
@@ -101,6 +117,8 @@ public class LightAgentManager implements AgentManagerInterface {
 
                 }
             } catch (Exception e) {
+                ShieldEnvironment.INSTANCE.getShieldLogger().e("@ReadShieldConfigError!!@FragmentName:"
+                        + fragment.toString() + "&" + e.toString());
                 Log.e("Shield", e.toString());
                 continue;
             }
@@ -147,23 +165,23 @@ public class LightAgentManager implements AgentManagerInterface {
                     return result;
                 }
             } catch (Exception e) {
-//                if (Environment.isDebug()) {
-//                    throw new RuntimeException("there has a exception " + e);
-//                }
-                Log.e("Shield", e.toString());
+                ShieldEnvironment.INSTANCE.getShieldLogger().e("@ReadShieldConfigException!!@FragmentName:"
+                        + fragment.toString() + "&Exception:" + e.toString());
                 return null;
             }
         }
 
 //        throw new RuntimeException("getDefaultAgentList() agentListConfig no one should be shown?");
-        Log.e("Shield", "getDefaultAgentList() agentListConfig no one should be shown?");
+        ShieldEnvironment.INSTANCE.getShieldLogger().e("@ReadShieldConfigError!!@FragmentName:"
+                + fragment.toString() + "& no one config should be shown?");
         return null;
     }
 
     //反射构造Agent
     protected AgentInterface constructAgents(AgentInfo agentInfo) {
         if (agentInfo == null) {
-            Log.e("Shield", "Failed to construct a null agent");
+            ShieldEnvironment.INSTANCE.getShieldLogger().e("Failed to construct a null agent@FragmentName:"
+                    + fragment.toString());
             return null;
         }
         Class<? extends AgentInterface> agentClass = agentInfo.agentClass;
@@ -172,6 +190,8 @@ public class LightAgentManager implements AgentManagerInterface {
             cellAgent = agentClass.getConstructor(Object.class).newInstance(
                     fragment);
         } catch (Exception e) {
+            ShieldEnvironment.INSTANCE.getShieldLogger().v("@ConstructAgents@Agent:"
+                    + agentInfo.toString() + "@(Object.class) constructor not found:" + e.toString());
 //              e.printStackTrace();
         }
         if (cellAgent == null) {
@@ -182,7 +202,8 @@ public class LightAgentManager implements AgentManagerInterface {
                 cellAgent = agentClass.getConstructor(params).newInstance(
                         values);
             } catch (Exception e) {
-//                            e.printStackTrace();
+                ShieldEnvironment.INSTANCE.getShieldLogger().v("@ConstructAgents@Agent:"
+                        + agentInfo.toString() + "@{fragment, driverInterface, pageContainer} constructor not found:" + e.toString());
             }
         }
 
@@ -190,12 +211,13 @@ public class LightAgentManager implements AgentManagerInterface {
             try {
                 cellAgent = agentClass.newInstance();
             } catch (Exception e) {
-//                            e.printStackTrace();
+                ShieldEnvironment.INSTANCE.getShieldLogger().e("@ConstructAgentsException@Agent:"
+                        + agentInfo.toString() + "Exception:" + e.toString());
             }
         }
 
         if (cellAgent == null) {
-            Log.e("Shield", agentClass.getCanonicalName() + ":Failed to construct Agent");
+            ShieldEnvironment.INSTANCE.getShieldLogger().e("@ConstructAgentsException@" + agentClass.getCanonicalName() + "@:Failed to construct Agent");
         }
         return cellAgent;
     }
@@ -281,6 +303,7 @@ public class LightAgentManager implements AgentManagerInterface {
         // 2.以前有的agent,现在还有,那什么都不做,还原这个agent,等待之后统一dispatchCellChanged
         // 3.以前有的agent,后来没有了,那要调用stop,destory
         // resetAgent的时候,对agent列表做一个整理
+        ShieldEnvironment.INSTANCE.getShieldLogger().v("@ResetStart@");
         ArrayList<String> copyOfAgentList = (ArrayList<String>) agentList.clone();
         HashMap<String, AgentInterface> copyOfAgents = (HashMap<String, AgentInterface>) agents.clone();
 
@@ -342,15 +365,46 @@ public class LightAgentManager implements AgentManagerInterface {
         copyOfAgentList.clear();
         copyOfAgents.clear();
 
+        if (ShieldEnvironment.INSTANCE.isDebug()) {
+            ShieldEnvironment.INSTANCE.getShieldLogger().d("@ResetAgents@Agents:" + agents.toString());
+            ShieldEnvironment.INSTANCE.getShieldLogger().v("@ResetNotifyCell@");
+        }
         agentCellBridgeInterface.updateCells(addList, updateList, deleteList);
 
         // only for old version
         dispatchCellChanged(fragment.getActivity(), null, null);
+
     }
 
     @Override
+    public void initViewCell() {
+        ArrayList<AgentInterface> addList = new ArrayList<AgentInterface>();
+        for (String name : agentList) {
+            AgentInterface agent = agents.get(name);
+            if (agent != null) {
+                addList.add(agent);
+            }
+        }
+        agentCellBridgeInterface.updateCells(addList, null, null);
+        dispatchCellChanged(fragment.getActivity(), null, null);
+        if (ShieldEnvironment.INSTANCE.isDebug()) {
+            ShieldEnvironment.INSTANCE.getShieldLogger().v("@InitNotifyCell@");
+        }
+    }
+
+    //已经不推荐通过name来寻找其他模块
+    @Override
     public AgentInterface findAgent(String name) {
-        return agents.get(name);
+        AgentInterface result = agents.get(name);
+        //兼容agent在tab嵌套中的情形，考虑在tab中，name会添加前缀的情形
+        if (result == null) {
+            for (Map.Entry<String, AgentInterface> entry : agents.entrySet()) {
+                if (entry.getKey().endsWith(AGENT_SEPARATE + name)) {
+                    return entry.getValue();
+                }
+            }
+        }
+        return result;
     }
 
     //onAgentChanged callback is Deprecated,so don't call dispatchCellChanged.

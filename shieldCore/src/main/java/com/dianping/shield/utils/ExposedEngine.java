@@ -32,9 +32,17 @@ public class ExposedEngine {
 
     HashMap<PieceAdapter, AdapterExposedList> adapterMap = new HashMap<>();
 
+    //store only when Activity is Pauseing
+    HashMap<PieceAdapter, AdapterExposedList> adapterStatusMap = new HashMap<>();
+
+    //record page resume agent list
+    HashMap<PieceAdapter, AdapterExposedList> resumeStatusMap = new HashMap<>();
+
     ExposedDispatcher dispatcher = new ExposedDispatcher();
 
     MoveStatusDispatcher moveStatusDispatcher = new MoveStatusDispatcher();
+
+    boolean isPageResumed = false;
 
     public synchronized void updateExposedSections(ArrayList<ExposedInfo> exposedInfos, ScrollDirection direction) {
 
@@ -71,7 +79,8 @@ public class ExposedEngine {
                 SectionCellInterface cellInterface = info.owner.getSectionCellInterface();
                 if (cellInterface instanceof CellExposedInterface || cellInterface instanceof ExtraCellExposedInterface
                         || cellInterface instanceof CellMoveStatusInterface || cellInterface instanceof ExtraCellMoveStatusInterface) {
-                    CellType type = info.owner.getCellType(info.details.section, info.details.row);
+//                    CellType type = info.owner.getCellType(info.details.section, info.details.row);
+                    CellType type = info.details.cellType;
                     Pair<Integer, Integer> pair = info.owner.getInnerPosition(info.details.section, info.details.row);
                     ExposeScope scope = getScope(cellInterface, type, pair);
                     if (info.details.isComplete) {
@@ -142,7 +151,8 @@ public class ExposedEngine {
                     || cellInterface instanceof CellMoveStatusInterface || cellInterface instanceof ExtraCellMoveStatusInterface) {
                 //过滤掉数据变化导致的index越界
                 if (info.owner.getSectionCount() > info.details.section && info.owner.getRowCount(info.details.section) > info.details.row) {
-                    CellType type = info.owner.getCellType(info.details.section, info.details.row);
+//                    CellType type = info.owner.getCellType(info.details.section, info.details.row);
+                    CellType type = info.details.cellType;
                     Pair<Integer, Integer> pair = info.owner.getInnerPosition(info.details.section, info.details.row);
                     ExposeScope scope = getScope(cellInterface, type, pair);
                     if (info.details.isComplete) {
@@ -171,6 +181,7 @@ public class ExposedEngine {
         //保存新的
         innerInfos = exposedInfos;
 
+        //计算模块级开始
         //MAP遍历
         ArrayList<ExposedAction> actionList = new ArrayList<>();
 
@@ -183,21 +194,26 @@ public class ExposedEngine {
                     AdapterExposedList newList = entry.getValue();
                     if (newList.partExposedList.isEmpty()
                             && newList.completeExposedList.size() == entry.getKey().getItemCount()) {
-                        //SC_NEW_FULL
-                        //先调移入屏幕回调
-                        dispatchCellMove(sectionCellInterface, ExposeScope.PX, direction, -1, -1, null, true, true);
-                        dispatchCellMove(sectionCellInterface, ExposeScope.COMPLETE, direction, -1, -1, null, true, true);
+                        //过滤掉一次已经PageResume后的MoveStatus Appear分发
+                        if (direction != ScrollDirection.STATIC || (!isPageResumed) || !resumeStatusMap.containsKey(entry.getKey())) {
+                            //SC_NEW_FULL
+                            //先调移入屏幕回调
+                            dispatchCellMove(sectionCellInterface, ExposeScope.PX, direction, -1, -1, null, true, true);
+                            dispatchCellMove(sectionCellInterface, ExposeScope.COMPLETE, direction, -1, -1, null, true, true);
+                        }
                         //再走曝光逻辑
 
                         //px和complete都是新增
                         dispatcher.exposedAction(new ExposedAction(sectionCellInterface, -1, -1, null, true, true));
                         //列表内全为NEW_FULL
                     } else {
-                        //SC_NEW_PART
-                        //先调移入屏幕回调
-                        dispatchCellMove(sectionCellInterface, ExposeScope.PX, direction, -1, -1, null, true, true);
-                        //再走曝光逻辑
-
+                        //过滤掉一次已经PageResume后的MoveStatus Appear分发
+                        if (direction != ScrollDirection.STATIC || (!isPageResumed)||!resumeStatusMap.containsKey(entry.getKey())) {
+                            //SC_NEW_PART
+                            //先调移入屏幕回调
+                            dispatchCellMove(sectionCellInterface, ExposeScope.PX, direction, -1, -1, null, true, true);
+                            //再走曝光逻辑
+                        }
                         if (((ExposedInterface) sectionCellInterface).getExposeScope() == ExposeScope.PX) {
                             dispatcher.exposedAction(new ExposedAction(sectionCellInterface, -1, -1, null, true, true));
                         }
@@ -215,11 +231,13 @@ public class ExposedEngine {
                             //内部列表不一样
                             if (newList.partExposedList.isEmpty()
                                     && newList.completeExposedList.size() == entry.getKey().getItemCount()) {
-                                //新的part为空，full为全, SC_PART_TO_FULL,不是移出,remove temp
-                                //先调移入屏幕回调
-                                dispatchCellMove(sectionCellInterface, ExposeScope.COMPLETE, direction, -1, -1, null, true, true);
-                                //再走曝光逻辑
-
+                                //过滤掉一次已经PageResume后的MoveStatus Appear分发
+                                if (direction != ScrollDirection.STATIC || (!isPageResumed)||!resumeStatusMap.containsKey(entry.getKey())) {
+                                    //新的part为空，full为全, SC_PART_TO_FULL,不是移出,remove temp
+                                    //先调移入屏幕回调
+                                    dispatchCellMove(sectionCellInterface, ExposeScope.COMPLETE, direction, -1, -1, null, true, true);
+                                    //再走曝光逻辑
+                                }
                                 //增加一条按模块曝光
                                 if (((ExposedInterface) sectionCellInterface).getExposeScope() == ExposeScope.COMPLETE) {
                                     dispatcher.exposedAction(new ExposedAction(sectionCellInterface, -1, -1, null, true, true));
@@ -227,6 +245,7 @@ public class ExposedEngine {
 
                             } else if (oldList.partExposedList.isEmpty()
                                     && oldList.completeExposedList.size() == entry.getKey().getItemCount()) {
+
                                 //老的part为空，full为全, SC_FULL_TO_PART,不是移出,remove temp
                                 //先调移入屏幕回调
                                 dispatchCellMove(sectionCellInterface, ExposeScope.PX, direction, -1, -1, null, false, true);
@@ -244,6 +263,8 @@ public class ExposedEngine {
                     //内部列表一样，说明没变
 
                     tempMap.remove(entry.getKey());
+                    isPageResumed = false;
+                    resumeStatusMap.clear();
                 }
             }
         }
@@ -297,15 +318,69 @@ public class ExposedEngine {
         innerInfos.clear();
         adapterMap.clear();
         dispatcher.finishExposed();
-        moveStatusDispatcher.stopDispatch();
     }
 
     public void pauseExposedDispatcher() {
         innerInfos.clear();
         adapterMap.clear();
         dispatcher.pauseExposed();
+//        moveStatusDispatcher.stopDispatch();
+    }
+
+    public void stopMoveStatusDispatch() {
         moveStatusDispatcher.stopDispatch();
     }
+
+    public void storeMoveStatusMap() {
+        if (!adapterMap.isEmpty()) {
+            adapterStatusMap = (HashMap<PieceAdapter, AdapterExposedList>) adapterMap.clone();
+        }
+    }
+
+    public void clearMoveStatusMap() {
+        adapterStatusMap.clear();
+    }
+
+    public void dispatchAgentDisappearWithLifecycle(ScrollDirection direction) {
+        //一遍循环后 旧tempMap剩下的就是SC_PART_TO_END和SC_FULL_TO_END
+        for (Map.Entry<PieceAdapter, AdapterExposedList> entry : adapterMap.entrySet()) {
+            SectionCellInterface sectionCellInterface = entry.getKey().getSectionCellInterface();
+            if (sectionCellInterface instanceof MoveStatusInterface) {
+                dispatchCellMove(sectionCellInterface, ExposeScope.COMPLETE, direction, -1, -1, null, false, true);
+            }
+        }
+    }
+
+    public void dispatchAgentAappearWithLifecycle(ScrollDirection direction) {
+        //一遍循环后 旧tempMap剩下的就是SC_NEW_FULL和SC_NEW_PART
+        for (Map.Entry<PieceAdapter, AdapterExposedList> entry : adapterStatusMap.entrySet()) {
+            SectionCellInterface sectionCellInterface = entry.getKey().getSectionCellInterface();
+            if (sectionCellInterface instanceof MoveStatusInterface) {
+                AdapterExposedList newList = entry.getValue();
+                if (newList.partExposedList.isEmpty()
+                        && newList.completeExposedList.size() == entry.getKey().getItemCount()) {
+                    //SC_NEW_FULL
+                    //先调移入屏幕回调
+                    dispatchCellMove(sectionCellInterface, ExposeScope.PX, direction, -1, -1, null, true, true);
+                    dispatchCellMove(sectionCellInterface, ExposeScope.COMPLETE, direction, -1, -1, null, true, true);
+                    //列表内全为NEW_FULL
+                } else {
+                    //SC_NEW_PART
+                    //先调移入屏幕回调
+                    dispatchCellMove(sectionCellInterface, ExposeScope.PX, direction, -1, -1, null, true, true);
+                    //FULL列表内全为NEW_FULL，PART列表内全为NEW_PART
+                }
+//                dispatchCellMove(sectionCellInterface, ExposeScope.COMPLETE, direction, -1, -1, null, true, true);
+                if (direction == ScrollDirection.PAGE_RESUME) {
+                    resumeStatusMap.put(entry.getKey(),entry.getValue());
+                }
+            }
+        }
+        if (direction == ScrollDirection.PAGE_RESUME) {
+            isPageResumed = true;
+        }
+    }
+
 
     public ArrayList<ExposedInfo> getInnerInfos() {
         return innerInfos;

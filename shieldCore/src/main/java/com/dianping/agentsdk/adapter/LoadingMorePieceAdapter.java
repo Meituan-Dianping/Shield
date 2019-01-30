@@ -12,6 +12,8 @@ import android.widget.TextView;
 
 import com.dianping.agentsdk.framework.CellStatus;
 import com.dianping.agentsdk.framework.CellStatusMoreInterface;
+import com.dianping.agentsdk.framework.CellStatusMoreReuseInterface;
+import com.dianping.agentsdk.framework.DividerInfo;
 import com.dianping.agentsdk.framework.LinkType;
 import com.dianping.agentsdk.framework.ViewUtils;
 import com.dianping.agentsdk.sectionrecycler.section.MergeSectionDividerAdapter;
@@ -244,6 +246,14 @@ public class LoadingMorePieceAdapter extends WrapperPieceAdapter<CellStatusMoreI
         return super.hasTopDividerVerticalOffset(section, row);
     }
 
+    @Override
+    public DividerInfo getDividerInfo(int section, int row) {
+        if (isExtraSection(section)) {
+            return null;
+        }
+        return super.getDividerInfo(section, row);
+    }
+
     /* 对所有涉及到section的被包装方法进行section还原 end **/
 
     @Override
@@ -251,9 +261,15 @@ public class LoadingMorePieceAdapter extends WrapperPieceAdapter<CellStatusMoreI
         if (extraInterface != null) {
             if (getItemViewType(sectionIndex, row) == LOADING_TYPE) {
                 extraInterface.onBindView(CellStatus.LoadingMoreStatus.LOADING);
+                if (extraInterface instanceof CellStatusMoreReuseInterface) {
+                    ((CellStatusMoreReuseInterface)extraInterface).updateLoadingMoreView(holder.itemView);
+                }
                 return;
             } else if (getItemViewType(sectionIndex, row) == FAILED_TYPE) {
                 extraInterface.onBindView(CellStatus.LoadingMoreStatus.FAILED);
+                if (extraInterface instanceof CellStatusMoreReuseInterface) {
+                    ((CellStatusMoreReuseInterface)extraInterface).updateLoadingMoreFailedView(holder.itemView);
+                }
                 return;
             }
         }

@@ -12,6 +12,8 @@ import android.widget.TextView;
 
 import com.dianping.agentsdk.framework.CellStatus;
 import com.dianping.agentsdk.framework.CellStatusInterface;
+import com.dianping.agentsdk.framework.CellStatusReuseInterface;
+import com.dianping.agentsdk.framework.DividerInfo;
 import com.dianping.agentsdk.framework.LinkType;
 import com.dianping.agentsdk.framework.ViewUtils;
 import com.dianping.agentsdk.sectionrecycler.section.MergeSectionDividerAdapter;
@@ -236,12 +238,36 @@ public class LoadingPieceAdapter extends WrapperPieceAdapter<CellStatusInterface
         return super.hasTopDividerVerticalOffset(section, row);
     }
 
+    @Override
+    public DividerInfo getDividerInfo(int section, int row) {
+        if (needShow()) {
+            return null;
+        }
+        return super.getDividerInfo(section, row);
+    }
     /* 对所有涉及到section和row的被包装方法进行section还原 end **/
 
 
     @Override
     public void onBindViewHolder(MergeSectionDividerAdapter.BasicHolder holder, int sectionIndex, int row) {
-        if (!needShow()) {
+        if (needShow()) {
+            if (getItemViewType(sectionIndex, row) == LOADING_TYPE) {
+                if (extraInterface instanceof CellStatusReuseInterface) {
+                    ((CellStatusReuseInterface)extraInterface).updateLoadingView(holder.itemView);
+                    return;
+                }
+            } else if (getItemViewType(sectionIndex, row) == FAILED_TYPE) {
+                if (extraInterface instanceof CellStatusReuseInterface) {
+                    ((CellStatusReuseInterface)extraInterface).updateLoadingFailedView(holder.itemView);
+                    return;
+                }
+            } else if (getItemViewType(sectionIndex, row) == EMPTY_TYPE) {
+                if (extraInterface instanceof CellStatusReuseInterface) {
+                    ((CellStatusReuseInterface)extraInterface).updateLoadingEmptyView(holder.itemView);
+                    return;
+                }
+            }
+        } else {
             super.onBindViewHolder(holder, sectionIndex, row);
         }
     }

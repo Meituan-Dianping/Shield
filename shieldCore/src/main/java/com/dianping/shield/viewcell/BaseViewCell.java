@@ -8,13 +8,16 @@ import android.view.ViewGroup;
 import com.dianping.agentsdk.framework.CellStatus;
 import com.dianping.agentsdk.framework.CellStatusInterface;
 import com.dianping.agentsdk.framework.CellStatusMoreInterface;
+import com.dianping.agentsdk.framework.DividerInfo;
 import com.dianping.agentsdk.framework.DividerInterface;
 import com.dianping.agentsdk.framework.ItemClickInterface;
 import com.dianping.agentsdk.framework.ItemIdInterface;
 import com.dianping.agentsdk.framework.ItemLongClickInterface;
 import com.dianping.agentsdk.framework.LinkType;
+import com.dianping.agentsdk.framework.SectionDividerInfoInterface;
 import com.dianping.agentsdk.framework.SectionExtraCellInterface;
 import com.dianping.agentsdk.framework.SectionLinkCellInterface;
+import com.dianping.shield.feature.SectionTitleInterface;
 
 /**
  * Created by hezhi on 16/6/28.
@@ -22,10 +25,12 @@ import com.dianping.agentsdk.framework.SectionLinkCellInterface;
 public abstract class BaseViewCell implements SectionExtraCellInterface,
         DividerInterface, CellStatusInterface,
         CellStatusMoreInterface, SectionLinkCellInterface,
-        ItemIdInterface, ItemClickInterface, ItemLongClickInterface {
+        ItemIdInterface, ItemClickInterface, ItemLongClickInterface,
+        SectionTitleInterface, SectionDividerInfoInterface {
     public Context mContext;
     protected OnItemClickListener mOnItemClickListener;
     protected OnItemLongClickListener mOnItemLongClickListener;
+
     public BaseViewCell(Context context) {
         this.mContext = context;
     }
@@ -81,7 +86,22 @@ public abstract class BaseViewCell implements SectionExtraCellInterface,
 
     @Override
     public long getItemId(int section, int position) {
-        return -1;
+        long id = 0;
+        for (int i = 0; i < getSectionCount(); i++) {
+            if (i < section) {
+                for (int j = 0; j < getRowCount(i); j++) {
+                    id++;
+                }
+            } else if (i == section) {
+                for (int j = 0; j < getRowCount(i); j++) {
+                    if (j < position) {
+                        id++;
+                    }
+                }
+            }
+
+        }
+        return id;
     }
 
     @Override
@@ -180,6 +200,11 @@ public abstract class BaseViewCell implements SectionExtraCellInterface,
     }
 
     @Override
+    public DividerInfo getDividerInfo(int section) {
+        return null;
+    }
+
+    @Override
     public LinkType.Previous linkPrevious(int sectionPosition) {
         return null;
     }
@@ -215,12 +240,17 @@ public abstract class BaseViewCell implements SectionExtraCellInterface,
     }
 
     @Override
+    public OnItemLongClickListener getOnItemLongClickListener() {
+        return mOnItemLongClickListener;
+    }
+
+    @Override
     public void setOnItemLongClickListener(OnItemLongClickListener listener) {
         mOnItemLongClickListener = listener;
     }
 
     @Override
-    public OnItemLongClickListener getOnItemLongClickListener() {
-        return mOnItemLongClickListener;
+    public String getSectionTitle(int section) {
+        return null;
     }
 }

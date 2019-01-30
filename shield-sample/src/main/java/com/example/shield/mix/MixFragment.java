@@ -47,4 +47,5 @@ public class MixFragment extends AbsExampleFragment {
         configs.add(new MixAgentConfig());
         return configs;
     }
+
 }
